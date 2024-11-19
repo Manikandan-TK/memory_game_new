@@ -51,13 +51,13 @@ class ScoreDisplay extends StatelessWidget {
               _buildDetail(
                 theme,
                 Icons.timer_outlined,
-                '${score.time.inSeconds}s',
+                score.formattedTime,
               ),
               const SizedBox(width: AppTheme.spacing16),
               _buildDetail(
                 theme,
                 Icons.swap_horiz_rounded,
-                '${score.moves} moves',
+                '${score.matchesFound} matches',
               ),
               const SizedBox(width: AppTheme.spacing16),
               _buildDetail(
@@ -67,6 +67,15 @@ class ScoreDisplay extends StatelessWidget {
               ),
             ],
           ),
+          if (score.averageTimePerMatch > 0) ...[
+            const SizedBox(height: AppTheme.spacing8),
+            Text(
+              '${score.averageTimePerMatch.toStringAsFixed(1)}s per match',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ],
         ],
       ),
     );

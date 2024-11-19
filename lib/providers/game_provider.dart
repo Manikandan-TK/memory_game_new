@@ -102,6 +102,12 @@ class GameProvider extends ChangeNotifier {
       final (rows, columns) = _config.difficulty.gridSize;
       final numberOfPairs = _config.difficulty.numberOfPairs;
 
+      // Reset score at game start
+      if (navigatorKey.currentContext != null) {
+        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+            .resetScore();
+      }
+
       // Validate configuration
       if (rows <= 0 || columns <= 0) {
         throw ArgumentError('Invalid grid size: rows=$rows, columns=$columns');
@@ -192,13 +198,27 @@ class GameProvider extends ChangeNotifier {
       // Flip the card
       _cards[index] = card.copyWith(isFlipped: true);
       _flippedCards.add(_cards[index]);
-      notifyListeners();
 
       // If we have two cards flipped, check for a match
       if (_flippedCards.length == 2) {
         _moves++;
+
+        // Update score on each move
+        final currentTime = DateTime.now().millisecondsSinceEpoch;
+        final duration = Duration(milliseconds: currentTime - _startTime);
+        if (navigatorKey.currentContext != null) {
+          Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+              .updateScore(
+                moves: _moves,
+                time: duration,
+                difficulty: _config.difficulty,
+              );
+        }
+
         await _processMatch();
       }
+
+      notifyListeners();
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -213,6 +233,10 @@ class GameProvider extends ChangeNotifier {
         'Processing match: ${_flippedCards.map((c) => c.emoji).join(" vs ")}');
     final isMatch = _flippedCards[0].emoji == _flippedCards[1].emoji;
 
+    // Calculate current duration for score update
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    final duration = Duration(milliseconds: currentTime - _startTime);
+
     if (isMatch) {
       GameLogger.i('Match found! 🎯 ${_flippedCards[0].emoji}');
       // Mark cards as matched
@@ -222,29 +246,43 @@ class GameProvider extends ChangeNotifier {
       }
       _matches++;
 
+      // Update score with match bonus
+      if (navigatorKey.currentContext != null) {
+        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+            .updateScore(
+              moves: _moves,
+              time: duration,
+              difficulty: _config.difficulty,
+              isMatch: true,
+            );
+      }
+
       // Check if game is complete
       if (_matches == _config.difficulty.numberOfPairs) {
         GameLogger.i(
             '🏆 Game complete! Moves: $_moves | Matches: $_matches');
         _isGameComplete = true;
-
-        // Calculate game duration
-        final endTime = DateTime.now().millisecondsSinceEpoch;
-        final duration = Duration(milliseconds: endTime - _startTime);
-
-        // Calculate score through ScoreProvider
+        
+        // Finalize score and add to high scores
         if (navigatorKey.currentContext != null) {
           Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-              .updateCurrentScore(
-                moves: _moves,
-                time: duration,
-                difficulty: _config.difficulty,
-              );
+              .finalizeScore();
         }
       }
     } else {
       GameLogger.i(
           'No match: ${_flippedCards[0].emoji} ≠ ${_flippedCards[1].emoji}');
+      // Update score without match bonus
+      if (navigatorKey.currentContext != null) {
+        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+            .updateScore(
+              moves: _moves,
+              time: duration,
+              difficulty: _config.difficulty,
+              isMatch: false,
+            );
+      }
+
       // Wait before flipping cards back
       await Future.delayed(const Duration(milliseconds: 500));
       for (var card in _flippedCards) {
@@ -261,6 +299,12 @@ class GameProvider extends ChangeNotifier {
 
   // Reset game with current configuration
   void resetGame() {
+    // Reset score provider
+    if (navigatorKey.currentContext != null) {
+      Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+          .resetScore();
+    }
+
     _isInitialized = false;
     initializeGame();
   }
