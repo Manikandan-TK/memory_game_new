@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart' hide CardTheme;
+import 'package:flutter/services.dart';
+import 'package:memory_game_new/models/card_theme.dart';
 import 'dart:math';
 import '../models/card_model.dart';
 import 'package:provider/provider.dart';
@@ -22,23 +24,25 @@ class MemoryCardWidget extends StatefulWidget {
   State<MemoryCardWidget> createState() => _MemoryCardWidgetState();
 }
 
-class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<MemoryCardWidget> {
+class _MemoryCardWidgetState extends State<MemoryCardWidget>
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<MemoryCardWidget> {
   late final AnimationController _controller;
   late final Animation<double> _flipAnimation;
   late final Animation<double> _scaleAnimation;
   bool _showFrontSide = false;
+  double _lastAnimationValue = 0.0;
 
   @override
   bool get wantKeepAlive => widget.card.isMatched || widget.card.isFlipped;
 
   void _onFlipAnimationChanged() {
     if (!mounted) return; // Safety check
-    
+
     // Only log when animation reaches key points
     if (_flipAnimation.value == 1.0 || _flipAnimation.value == 0.0) {
       GameLogger.d('Flip animation completed: ${_flipAnimation.value}');
     }
-    
+
     if (_flipAnimation.value > 0.5 && !_showFrontSide) {
       GameLogger.d('Card flipped to front');
       setState(() => _showFrontSide = true);
@@ -87,7 +91,7 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerPr
   @override
   void didUpdateWidget(MemoryCardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Update keep alive state if needed
     if (oldWidget.card.isMatched != widget.card.isMatched ||
         oldWidget.card.isFlipped != widget.card.isFlipped) {
@@ -117,119 +121,162 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerPr
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     final cardTheme = context.watch<CardThemeProvider>().currentTheme;
-    
-    final matchedGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        Colors.green.shade300,
-        Colors.green.shade100,
-        Colors.green.shade200,
-      ],
-      stops: const [0.0, 0.5, 1.0],
-    );
-
-    final flippedGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        cardTheme.primaryColor,
-        cardTheme.primaryColor.withOpacity(0.8),
-        cardTheme.secondaryColor,
-      ],
-      stops: const [0.0, 0.5, 1.0],
-    );
-
-    final unflippedGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        colorScheme.surfaceContainerHighest,
-        colorScheme.surface,
-        colorScheme.surfaceContainerHighest,
-      ],
-      stops: const [0.0, 0.5, 1.0],
-    );
 
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _flipAnimation]),
       builder: (context, child) {
+        final newValue = _flipAnimation.value;
+        final shouldUpdate = (_lastAnimationValue - newValue).abs() > 0.01;
+        _lastAnimationValue = newValue;
+        
+        if (!shouldUpdate && child != null) {
+          return child;
+        }
+
         return Transform(
           transform: Matrix4.identity()
             ..setEntry(3, 2, 0.001)
             ..scale(_scaleAnimation.value)
             ..rotateY(pi * _flipAnimation.value),
           alignment: Alignment.center,
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: RepaintBoundary(
-              child: Material(
-                elevation: widget.card.isFlipped ? 8 : 2,
-                shadowColor: widget.card.isMatched
-                    ? Colors.green.withOpacity(0.5)
-                    : colorScheme.shadow.withOpacity(0.3),
+          child: _buildCard(context, colorScheme, cardTheme),
+        );
+      },
+      child: _showFrontSide || widget.card.isMatched ? 
+        _buildCard(context, colorScheme, cardTheme) : null,
+    );
+  }
+
+  Widget _buildCard(BuildContext context, ColorScheme colorScheme, CardTheme cardTheme) {
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: RepaintBoundary(
+        child: Material(
+          elevation: widget.card.isFlipped ? 8 : 2,
+          shadowColor: widget.card.isMatched
+              ? Colors.green.withOpacity(0.5)
+              : colorScheme.shadow.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: _handleCardTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: widget.card.isMatched ? null : widget.onTap,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.card.isMatched
-                            ? Colors.green.shade300
-                            : widget.card.isFlipped
-                                ? cardTheme.primaryColor
-                                : colorScheme.outline.withOpacity(0.2),
-                        width: 2,
-                      ),
-                      gradient: widget.card.isMatched
-                          ? matchedGradient
-                          : _showFrontSide
-                              ? flippedGradient
-                              : unflippedGradient,
-                      boxShadow: widget.card.isMatched
-                          ? [
-                              BoxShadow(
-                                color: Colors.green.withOpacity(0.2),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                              )
-                            ]
-                          : null,
-                    ),
-                    child: Center(
-                      child: Transform(
-                        transform: Matrix4.identity()
-                          ..rotateY(_showFrontSide ? 0 : pi),
-                        alignment: Alignment.center,
-                        child: _showFrontSide
-                            ? Text(
+                border: Border.all(
+                  color: _getBorderColor(colorScheme, cardTheme),
+                  width: 2,
+                ),
+                gradient: _getGradient(colorScheme, cardTheme),
+                boxShadow: _getBoxShadow(),
+              ),
+              child: Center(
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..rotateY(_showFrontSide ? 0 : pi),
+                  alignment: Alignment.center,
+                  child: _showFrontSide
+                      ? Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          alignment: Alignment.center,
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Text(
                                 widget.card.emoji,
                                 style: TextStyle(
-                                  fontSize: widget.size != null ? widget.size! * 0.7 : 32,
+                                  fontSize: widget.size != null ? widget.size! * 0.85 : 40,
+                                  height: 1,
                                 ),
-                              )
-                            : CustomPaint(
-                                painter: CardPatternPainter(
-                                  primaryColor: cardTheme.primaryColor,
-                                  secondaryColor: cardTheme.secondaryColor,
-                                  themeType: cardTheme.type,
-                                ),
-                                child: const SizedBox(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
+                                textAlign: TextAlign.center,
                               ),
-                      ),
-                    ),
-                  ),
+                            ),
+                          ),
+                        )
+                      : CustomPaint(
+                          painter: CardPatternPainter(
+                            primaryColor: cardTheme.primaryColor,
+                            secondaryColor: cardTheme.secondaryColor,
+                            themeType: cardTheme.type,
+                          ),
+                          child: const SizedBox(
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+
+  void _handleCardTap() {
+    if (widget.card.isMatched) return;
+
+    HapticFeedback.lightImpact();
+    widget.onTap();
+  }
+
+  Color _getBorderColor(ColorScheme colorScheme, CardTheme cardTheme) {
+    if (widget.card.isMatched) return Colors.green.shade300;
+    if (widget.card.isFlipped) return cardTheme.primaryColor;
+    return colorScheme.outline.withOpacity(0.2);
+  }
+
+  LinearGradient _getGradient(ColorScheme colorScheme, CardTheme cardTheme) {
+    if (widget.card.isMatched) return _CardGradients.matchedGradient;
+    if (_showFrontSide) return _CardGradients.createFlippedGradient(cardTheme);
+    return _CardGradients.createUnflippedGradient(colorScheme);
+  }
+
+  List<BoxShadow>? _getBoxShadow() {
+    if (!widget.card.isMatched) return null;
+    return [
+      BoxShadow(
+        color: Colors.green.withOpacity(0.2),
+        blurRadius: 8,
+        spreadRadius: 2,
+      )
+    ];
+  }
+}
+
+class _CardGradients {
+  static final matchedGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Colors.green.shade300,
+      Colors.green.shade100,
+      Colors.green.shade200,
+    ],
+    stops: const [0.0, 0.5, 1.0],
+  );
+
+  static LinearGradient createFlippedGradient(CardTheme theme) => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      theme.primaryColor,
+      theme.primaryColor.withOpacity(0.8),
+      theme.secondaryColor,
+    ],
+    stops: const [0.0, 0.5, 1.0],
+  );
+
+  static LinearGradient createUnflippedGradient(ColorScheme colorScheme) => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      colorScheme.surfaceContainerHighest,
+      colorScheme.surface,
+      colorScheme.surfaceContainerHighest,
+    ],
+    stops: const [0.0, 0.5, 1.0],
+  );
 }
