@@ -125,29 +125,39 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget>
     return AnimatedBuilder(
       animation: Listenable.merge([_controller, _flipAnimation]),
       builder: (context, child) {
-        final newValue = _flipAnimation.value;
-        final shouldUpdate = (_lastAnimationValue - newValue).abs() > 0.01;
-        _lastAnimationValue = newValue;
-        
-        if (!shouldUpdate && child != null) {
-          return child;
-        }
-
         return Transform(
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.001)
-            ..scale(_scaleAnimation.value)
+            ..setEntry(3, 2, 0.002) // Increased perspective effect
             ..rotateY(pi * _flipAnimation.value),
           alignment: Alignment.center,
-          child: _buildCard(context, colorScheme, cardTheme),
+          child: _showFrontSide
+              ? _buildCardSide(
+                  context,
+                  colorScheme,
+                  cardTheme,
+                  true,
+                )
+              : Transform(
+                  transform: Matrix4.identity()..rotateY(pi),
+                  alignment: Alignment.center,
+                  child: _buildCardSide(
+                    context,
+                    colorScheme,
+                    cardTheme,
+                    false,
+                  ),
+                ),
         );
       },
-      child: _showFrontSide || widget.card.isMatched ? 
-        _buildCard(context, colorScheme, cardTheme) : null,
     );
   }
 
-  Widget _buildCard(BuildContext context, ColorScheme colorScheme, CardTheme cardTheme) {
+  Widget _buildCardSide(
+    BuildContext context,
+    ColorScheme colorScheme,
+    CardTheme cardTheme,
+    bool isFront,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: RepaintBoundary(
@@ -171,42 +181,37 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget>
                 boxShadow: _getBoxShadow(),
               ),
               child: Center(
-                child: Transform(
-                  transform: Matrix4.identity()
-                    ..rotateY(_showFrontSide ? 0 : pi),
-                  alignment: Alignment.center,
-                  child: _showFrontSide
-                      ? Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          alignment: Alignment.center,
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: Text(
-                                widget.card.emoji,
-                                style: TextStyle(
-                                  fontSize: widget.size != null ? widget.size! * 0.85 : 40,
-                                  height: 1,
-                                ),
-                                textAlign: TextAlign.center,
+                child: isFront
+                    ? Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Text(
+                              widget.card.emoji,
+                              style: TextStyle(
+                                fontSize: widget.size != null ? widget.size! * 0.85 : 40,
+                                height: 1,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        )
-                      : CustomPaint(
-                          painter: CardPatternPainter(
-                            primaryColor: cardTheme.primaryColor,
-                            secondaryColor: cardTheme.secondaryColor,
-                            themeType: cardTheme.type,
-                          ),
-                          child: const SizedBox(
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
                         ),
-                ),
+                      )
+                    : CustomPaint(
+                        painter: CardPatternPainter(
+                          primaryColor: cardTheme.primaryColor,
+                          secondaryColor: cardTheme.secondaryColor,
+                          themeType: cardTheme.type,
+                        ),
+                        child: const SizedBox(
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
               ),
             ),
           ),
