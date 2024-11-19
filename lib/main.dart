@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/game_provider.dart';
 import 'providers/card_theme_provider.dart';
+import 'providers/score_provider.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
 import 'package:logging/logging.dart';
 import 'utils/logger.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   GameLogger.init(level: Level.INFO); // Changed from Level.ALL to Level.INFO
@@ -21,8 +24,10 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => CardThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ScoreProvider()),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Memory Game',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.dark(),

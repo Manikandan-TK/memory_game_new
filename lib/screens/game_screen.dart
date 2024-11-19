@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../widgets/memory_card_widget.dart';
 import '../theme/app_theme.dart';
+import 'high_scores_screen.dart';
 
 class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
@@ -199,44 +200,71 @@ class GameScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            SizedBox(
-                              width: size.width * 0.8,
-                              height: 80,
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
-                                  foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 20,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  gameProvider.resetGame();
-                                  Navigator.pop(context);
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.home_rounded,
-                                      size: 36,
-                                      color: Colors.white.withOpacity(AppTheme.opacityHigh),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Text(
-                                      'Back to Menu',
-                                      style: theme.textTheme.headlineMedium?.copyWith(
-                                        color: Colors.white.withOpacity(AppTheme.opacityHigh),
-                                        fontWeight: FontWeight.bold,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: size.width * 0.4,
+                                  height: 80,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+                                      foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
+                                      padding: const EdgeInsets.all(20),
                                     ),
-                                  ],
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const HighScoresScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.emoji_events_rounded,
+                                          size: 36,
+                                          color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: size.width * 0.4,
+                                  height: 80,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+                                      foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: const EdgeInsets.all(20),
+                                    ),
+                                    onPressed: () {
+                                      gameProvider.resetGame();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.home_rounded,
+                                          size: 36,
+                                          color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

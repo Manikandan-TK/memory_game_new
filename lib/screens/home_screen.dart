@@ -6,6 +6,7 @@ import '../widgets/theme_selector.dart';
 import '../theme/app_theme.dart';
 import 'game_screen.dart';
 import '../widgets/difficulty_selector.dart';
+import 'high_scores_screen.dart'; // Added import for HighScoresScreen
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,21 +24,44 @@ class HomeScreen extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: AppTheme.spacing8),
-            child: IconButton.filled(
-              style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.surface
-                    .withOpacity(AppTheme.opacityMedium),
-              ),
-              icon: Icon(
-                Icons.settings_rounded,
-                size: 26,
-                color: Colors.white.withOpacity(AppTheme.opacityHigh),
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Settings coming soon!')),
-                );
-              },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface
+                        .withOpacity(AppTheme.opacityMedium),
+                  ),
+                  icon: Icon(
+                    Icons.emoji_events_rounded,
+                    size: 26,
+                    color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HighScoresScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surface
+                        .withOpacity(AppTheme.opacityMedium),
+                  ),
+                  icon: Icon(
+                    Icons.settings_rounded,
+                    size: 26,
+                    color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Settings coming soon!')),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],

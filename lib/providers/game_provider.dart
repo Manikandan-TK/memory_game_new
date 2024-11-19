@@ -3,6 +3,10 @@ import 'dart:math' as math;
 import '../models/card_model.dart';
 import '../models/game_config.dart';
 import '../utils/logger.dart';
+import '../models/score_model.dart';
+import 'package:provider/provider.dart';
+import 'score_provider.dart';
+import '../main.dart';
 
 class GameProvider extends ChangeNotifier {
   // Game configuration
@@ -29,6 +33,9 @@ class GameProvider extends ChangeNotifier {
 
   bool _isProcessing = false;
   bool get isProcessing => _isProcessing;
+
+  // Current score from ScoreProvider
+  int get currentScore => Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false).currentScore?.value ?? 0;
 
   // Cards state
   List<MemoryCard> _cards = [];
@@ -67,16 +74,12 @@ class GameProvider extends ChangeNotifier {
   ];
 
   // Scoring system
-  int _currentScore = 0;
-  int get currentScore => _currentScore;
-
-  int _consecutiveMatches = 0;
-  int _lastMatchTime = 0;
-
   static const int basePoints = 100;
   static const int comboBonus = 50;
   static const int movePenalty = 10;
   static const double maxTimeMultiplier = 1.5;
+
+  int _startTime = 0;
 
   // Update difficulty and reinitialize game
   void updateDifficulty(GameDifficulty difficulty) {
@@ -95,6 +98,7 @@ class GameProvider extends ChangeNotifier {
     if (_isInitialized) return;
 
     try {
+      _startTime = DateTime.now().millisecondsSinceEpoch;
       final (rows, columns) = _config.difficulty.gridSize;
       final numberOfPairs = _config.difficulty.numberOfPairs;
 
@@ -113,6 +117,13 @@ class GameProvider extends ChangeNotifier {
           'Not enough emojis (${emojis.length}) for the selected difficulty ($numberOfPairs pairs needed)',
         );
       }
+
+      // Reset game state
+      _moves = 0;
+      _matches = 0;
+      _isGameComplete = false;
+      _isProcessing = false;
+      _flippedCards.clear();
 
       // Create shuffled list of emojis for pairs
       final shuffledEmojis = emojis.take(numberOfPairs).toList()
@@ -134,14 +145,6 @@ class GameProvider extends ChangeNotifier {
 
       // Shuffle all cards
       _cards.shuffle(math.Random());
-      _flippedCards.clear();
-      _moves = 0;
-      _matches = 0;
-      _isGameComplete = false;
-      _isProcessing = false;
-      _currentScore = 0;
-      _consecutiveMatches = 0;
-      _lastMatchTime = DateTime.now().millisecondsSinceEpoch;
       _isInitialized = true;
 
       GameLogger.i('Game initialized with difficulty: ${_config.difficulty}');
@@ -219,21 +222,29 @@ class GameProvider extends ChangeNotifier {
       }
       _matches++;
 
-      // Update score for successful match
-      _updateScore(true);
-
       // Check if game is complete
       if (_matches == _config.difficulty.numberOfPairs) {
         GameLogger.i(
-            '🏆 Game complete! Final score: $_currentScore | Moves: $_moves | Matches: $_matches');
+            '🏆 Game complete! Moves: $_moves | Matches: $_matches');
         _isGameComplete = true;
+
+        // Calculate game duration
+        final endTime = DateTime.now().millisecondsSinceEpoch;
+        final duration = Duration(milliseconds: endTime - _startTime);
+
+        // Calculate score through ScoreProvider
+        if (navigatorKey.currentContext != null) {
+          Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
+              .updateCurrentScore(
+                moves: _moves,
+                time: duration,
+                difficulty: _config.difficulty,
+              );
+        }
       }
     } else {
       GameLogger.i(
           'No match: ${_flippedCards[0].emoji} ≠ ${_flippedCards[1].emoji}');
-      // Update score for failed match
-      _updateScore(false);
-
       // Wait before flipping cards back
       await Future.delayed(const Duration(milliseconds: 500));
       for (var card in _flippedCards) {
@@ -245,35 +256,6 @@ class GameProvider extends ChangeNotifier {
     _flippedCards.clear();
     GameLogger.d(
         'Match processing complete. Cards in play: ${_cards.where((c) => c.isFlipped).length}');
-    notifyListeners();
-  }
-
-  // Calculate score based on time taken and consecutive matches
-  void _updateScore(bool isMatch) {
-    if (isMatch) {
-      // Calculate time-based multiplier
-      final currentTime = DateTime.now().millisecondsSinceEpoch;
-      final timeDiff = currentTime - _lastMatchTime;
-      final timeMultiplier =
-          math.max(1.0, maxTimeMultiplier - (timeDiff / 1000) * 0.1);
-
-      // Calculate base score with time multiplier
-      final timeAdjustedScore = (basePoints * timeMultiplier).round();
-
-      // Add combo bonus for consecutive matches
-      _consecutiveMatches++;
-      final comboPoints = _consecutiveMatches > 1 ? comboBonus : 0;
-
-      // Update total score
-      _currentScore += timeAdjustedScore + comboPoints;
-
-      // Update last match time
-      _lastMatchTime = currentTime;
-    } else {
-      // Apply move penalty and reset combo
-      _currentScore = math.max(0, _currentScore - movePenalty);
-      _consecutiveMatches = 0;
-    }
     notifyListeners();
   }
 
