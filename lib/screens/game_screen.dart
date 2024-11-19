@@ -283,13 +283,13 @@ class GameScreen extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: theme.colorScheme.onSurface.withOpacity(AppTheme.opacityMedium),
+                color: Colors.white.withOpacity(AppTheme.opacityHigh),
               ),
               const SizedBox(width: AppTheme.spacing4),
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(AppTheme.opacityMedium),
+                  color: Colors.white.withOpacity(AppTheme.opacityHigh),
                 ),
               ),
             ],
@@ -298,7 +298,7 @@ class GameScreen extends StatelessWidget {
           Text(
             value,
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
+              color: Colors.white.withOpacity(AppTheme.opacityHigh),
               fontWeight: FontWeight.bold,
             ),
           ),

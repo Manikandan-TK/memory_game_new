@@ -25,7 +25,8 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: AppTheme.spacing8),
             child: IconButton.filled(
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                backgroundColor: theme.colorScheme.surface
+                    .withOpacity(AppTheme.opacityMedium),
               ),
               icon: Icon(
                 Icons.settings_rounded,
@@ -52,8 +53,10 @@ class HomeScreen extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     theme.colorScheme.primary.withOpacity(AppTheme.opacityHigh),
-                    theme.colorScheme.tertiary.withOpacity(AppTheme.opacityMedium),
-                    theme.colorScheme.secondary.withOpacity(AppTheme.opacityLight),
+                    theme.colorScheme.tertiary
+                        .withOpacity(AppTheme.opacityMedium),
+                    theme.colorScheme.secondary
+                        .withOpacity(AppTheme.opacityLight),
                   ],
                 ),
               ),
@@ -83,7 +86,8 @@ class HomeScreen extends StatelessWidget {
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: size.width > 600 ? size.width * 0.1 : AppTheme.spacing24,
+                horizontal:
+                    size.width > 600 ? size.width * 0.1 : AppTheme.spacing24,
               ),
               child: Column(
                 children: [
@@ -101,12 +105,15 @@ class HomeScreen extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
-                              theme.colorScheme.secondary.withOpacity(AppTheme.opacityMedium),
+                              theme.colorScheme.primary
+                                  .withOpacity(AppTheme.opacityMedium),
+                              theme.colorScheme.secondary
+                                  .withOpacity(AppTheme.opacityMedium),
                             ],
                           ),
                           border: Border.all(
-                            color: Colors.white.withOpacity(AppTheme.opacityLight),
+                            color:
+                                Colors.white.withOpacity(AppTheme.opacityLight),
                             width: 2,
                           ),
                         ),
@@ -115,7 +122,8 @@ class HomeScreen extends StatelessWidget {
                             Icon(
                               Icons.extension_rounded, // Puzzle piece icon
                               size: size.height * 0.06,
-                              color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                              color: Colors.white
+                                  .withOpacity(AppTheme.opacityHigh),
                             ),
                             Positioned(
                               right: 0,
@@ -165,7 +173,8 @@ class HomeScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                      color: theme.colorScheme.surface
+                          .withOpacity(AppTheme.opacityMedium),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
@@ -180,8 +189,10 @@ class HomeScreen extends StatelessWidget {
                           child: FilledButton.icon(
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.all(16),
-                              backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
-                              foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                              backgroundColor: theme.colorScheme.primary
+                                  .withOpacity(AppTheme.opacityMedium),
+                              foregroundColor: Colors.white
+                                  .withOpacity(AppTheme.opacityHigh),
                             ),
                             onPressed: () {
                               context.read<GameProvider>().initializeGame();

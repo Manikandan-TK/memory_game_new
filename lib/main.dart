@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 import 'utils/logger.dart';
 
 void main() {
-  GameLogger.init(level: Level.INFO);  // Changed from Level.ALL to Level.INFO
+  GameLogger.init(level: Level.INFO); // Changed from Level.ALL to Level.INFO
   runApp(const MyApp());
 }
 
