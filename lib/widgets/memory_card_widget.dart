@@ -22,13 +22,18 @@ class MemoryCardWidget extends StatefulWidget {
   State<MemoryCardWidget> createState() => _MemoryCardWidgetState();
 }
 
-class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerProviderStateMixin {
+class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<MemoryCardWidget> {
   late final AnimationController _controller;
   late final Animation<double> _flipAnimation;
   late final Animation<double> _scaleAnimation;
   bool _showFrontSide = false;
 
+  @override
+  bool get wantKeepAlive => widget.card.isMatched || widget.card.isFlipped;
+
   void _onFlipAnimationChanged() {
+    if (!mounted) return; // Safety check
+    
     // Only log when animation reaches key points
     if (_flipAnimation.value == 1.0 || _flipAnimation.value == 0.0) {
       GameLogger.d('Flip animation completed: ${_flipAnimation.value}');
@@ -46,9 +51,11 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerPr
   @override
   void initState() {
     super.initState();
+    _showFrontSide = widget.card.isFlipped || widget.card.isMatched;
     _controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
+      value: widget.card.isFlipped || widget.card.isMatched ? 1.0 : 0.0,
     );
 
     _flipAnimation = Tween<double>(
@@ -74,13 +81,19 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerPr
       curve: Curves.easeOutCubic,
     ));
 
-    // Listen to animation state to handle card face visibility
     _flipAnimation.addListener(_onFlipAnimationChanged);
   }
 
   @override
   void didUpdateWidget(MemoryCardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    
+    // Update keep alive state if needed
+    if (oldWidget.card.isMatched != widget.card.isMatched ||
+        oldWidget.card.isFlipped != widget.card.isFlipped) {
+      updateKeepAlive();
+    }
+
     if (widget.card.isFlipped != oldWidget.card.isFlipped) {
       GameLogger.d('Card flip state changed: ${widget.card.isFlipped}');
       if (widget.card.isFlipped) {
@@ -101,6 +114,7 @@ class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     final cardTheme = context.watch<CardThemeProvider>().currentTheme;
     

@@ -148,6 +148,9 @@ class GameScreen extends StatelessWidget {
                                 scrollbars: false,
                               ),
                               child: GridView.builder(
+                                // Keep items in memory even when not visible
+                                addRepaintBoundaries: true,
+                                addAutomaticKeepAlives: true,
                                 // Use builder for better performance
                                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: columns,
@@ -165,14 +168,18 @@ class GameScreen extends StatelessWidget {
                                     : const NeverScrollableScrollPhysics(),
                                 padding: const EdgeInsets.all(4),
                                 itemCount: gameProvider.cards.length,
-                                // Cache extent to prevent rebuilding off-screen items
-                                cacheExtent: cardWidth * 2,
-                                itemBuilder: (context, index) => MemoryCardWidget(
-                                  key: ValueKey(gameProvider.cards[index].id),
-                                  card: gameProvider.cards[index],
-                                  onTap: () => gameProvider.flipCard(index),
-                                  size: cardWidth,
-                                ),
+                                // Increase cache extent for better scrolling performance
+                                cacheExtent: cardWidth * 4,
+                                itemBuilder: (context, index) {
+                                  final card = gameProvider.cards[index];
+                                  return MemoryCardWidget(
+                                    // Use a unique key combining card ID and state
+                                    key: ObjectKey('${card.id}_${card.isMatched}_${card.isFlipped}'),
+                                    card: card,
+                                    onTap: () => gameProvider.flipCard(index),
+                                    size: cardWidth,
+                                  );
+                                },
                               ),
                             ),
                           );
