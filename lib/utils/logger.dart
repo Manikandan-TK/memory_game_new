@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 /// A utility class for handling logging throughout the application.
 class GameLogger {
@@ -10,10 +12,20 @@ class GameLogger {
   static void init({Level level = Level.INFO}) {
     if (_initialized) return;
 
+    // Configure debug print filtering
+    if (kDebugMode) {
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message == null) return;
+        if (message.contains('EGL_emulation')) return;
+        if (message.contains('app_time_stats')) return;
+        developer.log(message, name: 'MemoryGame');
+      };
+    }
+
     Logger.root.level = level;
     Logger.root.onRecord.listen((record) {
       // Add timestamp and format the message
-      final time = record.time.toLocal().toString().split(' ')[1];  // Get only the time part
+      final time = record.time.toLocal().toString().split(' ')[1];
       final emoji = _getLogEmoji(record.level);
       
       // Format: [Time] 🎮 Message
