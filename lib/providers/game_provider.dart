@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import '../models/card_model.dart';
 import '../models/game_config.dart';
 import '../utils/logger.dart';
-import '../models/score_model.dart';
 import 'package:provider/provider.dart';
 import 'score_provider.dart';
 import '../main.dart';

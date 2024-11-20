@@ -1,71 +1,77 @@
 import 'package:flutter/material.dart';
+import 'card_back_asset.dart';
+import 'theme_identifier.dart';
 
-enum CardThemeType {
-  classic,
-  geometric,
-  nature,
-  space,
-  tech
-}
-
+/// Represents a theme for memory cards
 class CardTheme {
-  final String name;
-  final CardThemeType type;
-  final Color primaryColor;
-  final Color secondaryColor;
-  final IconData frontIcon;
-  final String? imagePath;
-  final bool useCustomPainter;
+  final ThemeIdentifier identifier;
+  final CardBackAsset cardBackAsset;
 
   const CardTheme({
-    required this.name,
-    required this.type,
-    required this.primaryColor,
-    required this.secondaryColor,
-    required this.frontIcon,
-    this.imagePath,
-    this.useCustomPainter = false,
+    required this.identifier,
+    required this.cardBackAsset,
   });
 
-  factory CardTheme.classic() => const CardTheme(
-    name: 'Classic',
-    type: CardThemeType.classic,
-    primaryColor: Colors.blue,
-    secondaryColor: Colors.lightBlue,
-    frontIcon: Icons.star,
-    useCustomPainter: true,
+  String get name => identifier.name;
+
+  // Predefined themes
+  static const classic = CardTheme(
+    identifier: ThemeIdentifier.classic,
+    cardBackAsset: ThemedCardBackAsset(
+      assetPath: 'assets/images/card_backs/classic_back.webp',
+      borderColor: Colors.blue,
+      backgroundColor: Colors.white,
+    ),
   );
 
-  factory CardTheme.geometric() => const CardTheme(
-    name: 'Geometric',
-    type: CardThemeType.geometric,
-    primaryColor: Colors.purple,
-    secondaryColor: Colors.deepPurple,
-    frontIcon: Icons.shape_line,
-    useCustomPainter: true,
+  static const geometry = CardTheme(
+    identifier: ThemeIdentifier.geometry,
+    cardBackAsset: ThemedCardBackAsset(
+      assetPath: 'assets/images/card_backs/geometry_back.webp',
+      borderColor: Colors.teal,
+      backgroundColor: Colors.white,
+    ),
   );
 
-  factory CardTheme.nature() => const CardTheme(
-    name: 'Nature',
-    type: CardThemeType.nature,
-    primaryColor: Colors.green,
-    secondaryColor: Colors.lightGreen,
-    frontIcon: Icons.eco,
+  static const nature = CardTheme(
+    identifier: ThemeIdentifier.nature,
+    cardBackAsset: ThemedCardBackAsset(
+      assetPath: 'assets/images/card_backs/nature_back.webp',
+      borderColor: Colors.green,
+      backgroundColor: Colors.white,
+    ),
   );
 
-  factory CardTheme.space() => const CardTheme(
-    name: 'Space',
-    type: CardThemeType.space,
-    primaryColor: Colors.indigo,
-    secondaryColor: Colors.deepPurple,
-    frontIcon: Icons.stars,
+  static const space = CardTheme(
+    identifier: ThemeIdentifier.space,
+    cardBackAsset: ThemedCardBackAsset(
+      assetPath: 'assets/images/card_backs/space_back.webp',
+      borderColor: Colors.purple,
+      backgroundColor: Colors.white,
+    ),
   );
 
-  factory CardTheme.tech() => const CardTheme(
-    name: 'Tech',
-    type: CardThemeType.tech,
-    primaryColor: Colors.cyan,
-    secondaryColor: Colors.teal,
-    frontIcon: Icons.computer,
+  static const tech = CardTheme(
+    identifier: ThemeIdentifier.tech,
+    cardBackAsset: ThemedCardBackAsset(
+      assetPath: 'assets/images/card_backs/tech_back.webp',
+      borderColor: Colors.cyan,
+      backgroundColor: Colors.white,
+    ),
   );
+
+  static const List<CardTheme> allThemes = [
+    classic,
+    geometry,
+    nature,
+    space,
+    tech,
+  ];
+
+  static CardTheme fromIdentifier(ThemeIdentifier identifier) {
+    return allThemes.firstWhere(
+      (theme) => theme.identifier == identifier,
+      orElse: () => classic,
+    );
+  }
 }

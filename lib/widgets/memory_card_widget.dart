@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/card_model.dart';
 import '../providers/card_theme_provider.dart';
 import 'card_face.dart';
+import 'card_back_widget.dart';
 
 class MemoryCardWidget extends StatelessWidget {
   final MemoryCard card;
@@ -43,19 +44,10 @@ class MemoryCardWidget extends StatelessWidget {
             ),
           ),
         ),
-        back: Container(
-          width: cardSize,
-          height: cardSize,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cardSize * 0.12),
-            border: Border.all(
-              color: card.isMatched 
-                  ? Colors.green 
-                  : cardTheme.primaryColor,
-              width: isSmallScreen ? 2.0 : 2.5,
-            ),
-            color: cardTheme.secondaryColor,
-          ),
+        back: CardBackWidget(
+          cardBackAsset: cardTheme.cardBackAsset,
+          size: cardSize,
+          isSmallScreen: isSmallScreen,
         ),
       ),
     );

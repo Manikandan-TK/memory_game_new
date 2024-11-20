@@ -1,54 +1,92 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:memory_game_new/models/card_theme.dart';
+import '../models/card_theme.dart' as game;
+import '../models/theme_identifier.dart';
 import 'dart:ui' as ui;
-import 'package:memory_game_new/widgets/card_pattern_painter.dart';
 
+/// A utility class for testing the performance of card theme rendering
 class PerformanceTest {
   /// Test results for each theme
-  static final Map<CardThemeType, int> results = {};
+  static final Map<ThemeIdentifier, int> results = {};
 
-  /// Runs performance test for a single theme
-  static int testSingleTheme(CardThemeType theme, {int cardCount = 16}) {
-    final stopwatch = Stopwatch()..start();
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
+  /// Loads and decodes an image from an asset path
+  static Future<ui.Image> _loadImage(String assetPath) async {
+    final imageProvider = AssetImage(assetPath);
+    final completer = Completer<ui.Image>();
     
-    final painter = CardPatternPainter(
-      primaryColor: Colors.blue,
-      secondaryColor: Colors.lightBlue,
-      themeType: theme,
+    final imageStream = imageProvider.resolve(ImageConfiguration.empty);
+    final listener = ImageStreamListener(
+      (info, _) => completer.complete(info.image),
+      onError: (error, stackTrace) => completer.completeError(error),
     );
     
-    const size = Size(100, 150);
-    for (int i = 0; i < cardCount; i++) {
-      painter.paint(canvas, size);
-    }
-    
-    recorder.endRecording();
-    stopwatch.stop();
-    return stopwatch.elapsedMilliseconds;
+    imageStream.addListener(listener);
+    return completer.future;
   }
 
-  /// Compares rendering performance for all themes
-  static Future<Map<CardThemeType, int>> compareRenderingPerformance(BuildContext context) async {
+  /// Runs performance test for a single theme
+  static Future<int> testSingleTheme(ThemeIdentifier themeId, {int cardCount = 16}) async {
+    final theme = game.CardTheme.fromIdentifier(themeId);
+    final stopwatch = Stopwatch()..start();
+
+    try {
+      // Load and decode the image
+      final image = await _loadImage(theme.cardBackAsset.assetPath);
+
+      // Draw the cards
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      
+      const size = Size(100, 150);
+      for (int i = 0; i < cardCount; i++) {
+        final rect = Rect.fromLTWH(
+          (i % 4) * size.width,
+          (i ~/ 4) * size.height,
+          size.width,
+          size.height,
+        );
+        
+        // Draw card back image
+        canvas.drawImageRect(
+          image,
+          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          rect,
+          Paint(),
+        );
+
+        // Draw border
+        final borderPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0
+          ..color = theme.cardBackAsset.borderColor;
+        canvas.drawRect(rect, borderPaint);
+      }
+      
+      recorder.endRecording();
+      stopwatch.stop();
+      return stopwatch.elapsedMilliseconds;
+    } catch (e) {
+      print('Error testing theme ${theme.name}: $e');
+      return -1;
+    }
+  }
+
+  /// Runs performance test for all themes
+  static Future<Map<ThemeIdentifier, int>> testAllThemes({int cardCount = 16}) async {
     results.clear();
-    
-    for (var theme in CardThemeType.values) {
-      final elapsed = testSingleTheme(theme);
-      results[theme] = elapsed;
-      print('Theme $theme rendering time for 16 cards: ${elapsed}ms');
+    for (final themeId in ThemeIdentifier.values) {
+      results[themeId] = await testSingleTheme(themeId, cardCount: cardCount);
     }
+    return Map.unmodifiable(results);
+  }
+
+  /// Gets the average render time across all themes
+  static double getAverageRenderTime() {
+    if (results.isEmpty) return 0;
+    final validResults = results.values.where((time) => time >= 0);
+    if (validResults.isEmpty) return 0;
     
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Performance test complete. Check debug console for results.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-    
-    return results;
+    final total = validResults.reduce((a, b) => a + b);
+    return total / validResults.length;
   }
 }

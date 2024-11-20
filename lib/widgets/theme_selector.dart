@@ -6,6 +6,18 @@ import '../providers/card_theme_provider.dart';
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({super.key});
 
+  Widget _buildThemeInfo(BuildContext context, CardTheme theme) {
+    return Chip(
+      label: Text(
+        theme.name,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onPrimary,
+        ),
+      ),
+      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CardThemeProvider>(
@@ -36,7 +48,7 @@ class ThemeSelector extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 itemBuilder: (context, index) {
                   final theme = themeProvider.availableThemes[index];
-                  final isSelected = theme.type == themeProvider.currentTheme.type;
+                  final isSelected = theme.identifier == themeProvider.currentTheme.identifier;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -52,43 +64,6 @@ class ThemeSelector extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildThemeInfo(BuildContext context, CardTheme theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.primaryColor.withOpacity(0.9),
-            theme.secondaryColor.withOpacity(0.9),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: theme.primaryColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(theme.frontIcon, size: 20, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(
-            theme.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -109,16 +84,40 @@ class _ThemeCard extends StatefulWidget {
 }
 
 class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
   late final AnimationController _borderController;
+  late final Animation<double> _borderAnimation;
 
   @override
   void initState() {
     super.initState();
     _borderController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
-    )..repeat();
+    );
+
+    _borderAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _borderController,
+      curve: Curves.easeInOut,
+    ));
+
+    if (widget.isSelected) {
+      _borderController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(_ThemeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected != oldWidget.isSelected) {
+      if (widget.isSelected) {
+        _borderController.forward();
+      } else {
+        _borderController.reverse();
+      }
+    }
   }
 
   @override
@@ -129,91 +128,61 @@ class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedBuilder(
-          animation: _borderController,
-          builder: (context, child) {
-            return Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: widget.isSelected
-                    ? SweepGradient(
-                        center: Alignment.center,
-                        startAngle: 0,
-                        endAngle: 3.14 * 2,
-                        transform: GradientRotation(_borderController.value * 2 * 3.14),
-                        colors: [
-                          const Color(0xFFFFD700).withOpacity(1.0),  // Full opacity gold
-                          const Color(0xFFFFF380),  // Light gold
-                          const Color(0xFFDAA520),  // Golden rod
-                          const Color(0xFFFFDF00),  // Golden yellow
-                          const Color(0xFFFFD700).withOpacity(1.0),  // Full opacity gold
-                        ],
-                      )
-                    : null,
+    final theme = Theme.of(context);
+    final cardBackAsset = widget.theme.cardBackAsset;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedBuilder(
+        animation: _borderAnimation,
+        builder: (context, child) {
+          return Container(
+            width: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: widget.isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
+                width: 2 * _borderAnimation.value,
               ),
-              child: Container(
-                margin: widget.isSelected ? const EdgeInsets.all(4.5) : const EdgeInsets.all(2.5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(13),
-                  border: !widget.isSelected ? Border.all(
-                    color: _isHovered 
-                        ? const Color(0xFFFFD700)  // Gold on hover
-                        : const Color(0xFFDAA520).withOpacity(0.7),  // Darker gold normally
-                    width: 2.5,
-                  ) : null,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.theme.primaryColor.withOpacity(_isHovered || widget.isSelected ? 0.95 : 0.8),
-                      widget.theme.secondaryColor.withOpacity(_isHovered || widget.isSelected ? 0.95 : 0.8),
-                    ],
+            ),
+            child: child,
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: cardBackAsset.borderColor,
+                      width: 2,
+                    ),
+                    color: cardBackAsset.backgroundColor,
+                    image: DecorationImage(
+                      image: AssetImage(cardBackAsset.assetPath),
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.theme.primaryColor.withOpacity(widget.isSelected ? 0.3 : 0.1),
-                      blurRadius: _isHovered ? 12 : 8,
-                      offset: const Offset(0, 4),
-                      spreadRadius: _isHovered ? 1 : 0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      widget.theme.frontIcon,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black12,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.theme.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
-            );
-          },
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                widget.theme.name,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: widget.isSelected ? FontWeight.bold : null,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

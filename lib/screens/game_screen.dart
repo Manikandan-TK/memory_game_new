@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:memory_game_new/models/game_config.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../widgets/memory_card_widget.dart';
@@ -89,8 +88,6 @@ class GameScreen extends StatelessWidget {
                       builder: (context, constraints) {
                         final (rows, columns) =
                             gameProvider.config.difficulty.gridSize;
-                        final isHardMode = gameProvider.config.difficulty ==
-                            GameDifficulty.hard;
 
                         // Calculate optimal card size based on screen dimensions
                         final screenWidth = MediaQuery.of(context).size.width;

@@ -1,48 +1,43 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memory_game_new/utils/performance_test.dart';
-import 'package:memory_game_new/models/card_theme.dart';
+import 'package:memory_game_new/models/theme_identifier.dart';
 
 void main() {
   group('Performance Test', () {
-    test('should test single theme performance', () {
-      final elapsed = PerformanceTest.testSingleTheme(CardThemeType.classic);
+    setUpAll(() {
+      // Initialize asset bundle for testing
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
+    test('should test single theme performance', () async {
+      final elapsed = await PerformanceTest.testSingleTheme(ThemeIdentifier.classic);
       expect(elapsed, isNonNegative);
     });
 
-    test('should test all available themes', () {
-      for (final theme in CardThemeType.values) {
-        final elapsed = PerformanceTest.testSingleTheme(theme);
-        expect(elapsed, isNonNegative);
-        print('Theme $theme rendering time: ${elapsed}ms');
+    test('should test all available themes', () async {
+      final results = await PerformanceTest.testAllThemes();
+      
+      for (final entry in results.entries) {
+        expect(entry.value, isNonNegative);
+        print('Theme ${entry.key.name} rendering time: ${entry.value}ms');
       }
     });
 
-    testWidgets('should show completion message', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => TextButton(
-                onPressed: () => PerformanceTest.compareRenderingPerformance(context),
-                child: const Text('Run Test'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Get context and run test
-      final context = tester.element(find.text('Run Test'));
-      final results = await PerformanceTest.compareRenderingPerformance(context);
+    test('should calculate average render time', () async {
+      await PerformanceTest.testAllThemes();
+      final average = PerformanceTest.getAverageRenderTime();
       
-      // Verify results
-      expect(results.length, equals(CardThemeType.values.length));
-      expect(results.values.every((time) => time >= 0), isTrue);
+      expect(average, isNonNegative);
+      print('Average rendering time: ${average}ms');
+    });
 
-      // Verify UI update
-      await tester.pump();
-      expect(find.byType(SnackBar), findsOneWidget);
+    test('should handle theme asset loading', () async {
+      // Test each theme identifier
+      for (final identifier in ThemeIdentifier.values) {
+        final elapsed = await PerformanceTest.testSingleTheme(identifier);
+        expect(elapsed, isNonNegative);
+        expect(elapsed, isNonZero);
+      }
     });
   });
 }
