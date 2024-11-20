@@ -17,11 +17,11 @@ class ScoreDisplay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacing16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.9),
+        color: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -33,14 +33,14 @@ class ScoreDisplay extends StatelessWidget {
           Text(
             'Score',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: Colors.white.withOpacity(AppTheme.opacityHigh),
             ),
           ),
           const SizedBox(height: AppTheme.spacing8),
           Text(
             '${score.value}',
             style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.primary,
+              color: Colors.white.withOpacity(AppTheme.opacityHigh),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -72,7 +72,7 @@ class ScoreDisplay extends StatelessWidget {
             Text(
               '${score.averageTimePerMatch.toStringAsFixed(1)}s per match',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: Colors.white.withOpacity(AppTheme.opacityHigh),
               ),
             ),
           ],
@@ -88,13 +88,13 @@ class ScoreDisplay extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: theme.colorScheme.onSurface.withOpacity(0.7),
+          color: Colors.white.withOpacity(AppTheme.opacityHigh),
         ),
         const SizedBox(width: AppTheme.spacing4),
         Text(
           text,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: Colors.white.withOpacity(AppTheme.opacityHigh),
           ),
         ),
       ],

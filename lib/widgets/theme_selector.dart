@@ -7,14 +7,24 @@ class ThemeSelector extends StatelessWidget {
   const ThemeSelector({super.key});
 
   Widget _buildThemeInfo(BuildContext context, CardTheme theme) {
-    return Chip(
-      label: Text(
-        theme.name,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onPrimary,
+    final themeContext = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: themeContext.colorScheme.primary.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
         ),
       ),
-      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+      child: Text(
+        theme.name,
+        style: themeContext.textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withOpacity(0.9),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
@@ -32,6 +42,7 @@ class ThemeSelector extends StatelessWidget {
                   Text(
                     'Card Theme',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white.withOpacity(0.9),
                           fontWeight: FontWeight.bold,
                         ),
                   ),
@@ -139,13 +150,14 @@ class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMi
           return Container(
             width: 100,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: widget.isSelected
-                    ? theme.colorScheme.primary
-                    : Colors.transparent,
-                width: 2 * _borderAnimation.value,
+                    ? theme.colorScheme.primary.withOpacity(0.8)
+                    : Colors.white.withOpacity(0.2),
+                width: widget.isSelected ? 2 * _borderAnimation.value : 1,
               ),
+              color: theme.colorScheme.surface.withOpacity(0.1),
             ),
             child: child,
           );
@@ -159,9 +171,9 @@ class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMi
                 child: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: cardBackAsset.borderColor,
+                      color: cardBackAsset.borderColor.withOpacity(0.8),
                       width: 2,
                     ),
                     color: cardBackAsset.backgroundColor,
@@ -169,6 +181,15 @@ class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMi
                       image: AssetImage(cardBackAsset.assetPath),
                       fit: BoxFit.cover,
                     ),
+                    boxShadow: widget.isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : null,
                   ),
                 ),
               ),
@@ -178,7 +199,8 @@ class _ThemeCardState extends State<_ThemeCard> with SingleTickerProviderStateMi
               child: Text(
                 widget.theme.name,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: widget.isSelected ? FontWeight.bold : null,
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),
             ),

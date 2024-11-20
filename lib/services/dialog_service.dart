@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memory_game_new/theme/app_theme.dart';
 
 /// Service responsible for showing game-related dialogs
 /// Following Single Responsibility Principle - handles only dialog-related functionality
@@ -11,36 +12,41 @@ class DialogService {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
         title: Text(
           'Exit Game?',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
+            color: Colors.white.withOpacity(AppTheme.opacityHigh),
           ),
         ),
         content: Text(
           'Your progress will be lost. Are you sure you want to exit?',
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.8),
+            color: Colors.white.withOpacity(AppTheme.opacityHigh),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: theme.colorScheme.primary),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+              foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+              foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              'Exit',
-              style: TextStyle(color: theme.colorScheme.onPrimary),
-            ),
+            child: const Text('Exit'),
           ),
         ],
       ),
@@ -60,7 +66,7 @@ class DialogService {
           margin: const EdgeInsets.all(32),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -76,7 +82,7 @@ class DialogService {
               Text(
                 'Game Paused',
                 style: theme.textTheme.headlineMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                  color: Colors.white.withOpacity(AppTheme.opacityHigh),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -120,31 +126,23 @@ class DialogService {
   ) {
     return SizedBox(
       width: double.infinity,
-      child: FilledButton(
+      child: FilledButton.icon(
         style: FilledButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-          foregroundColor: theme.colorScheme.primary,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 16,
-          ),
+          backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+          foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+          padding: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         onPressed: () => Navigator.of(context).pop(action),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        icon: Icon(icon),
+        label: Text(
+          text,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: Colors.white.withOpacity(AppTheme.opacityHigh),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

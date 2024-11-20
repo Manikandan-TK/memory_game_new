@@ -26,7 +26,8 @@ class HighScoresScreen extends StatelessWidget {
         ),
         leading: IconButton.filled(
           style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+            backgroundColor:
+                theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
             foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
           ),
           icon: const Icon(Icons.arrow_back_rounded),
@@ -35,41 +36,88 @@ class HighScoresScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Background gradient layers
+          // Background gradient
           Positioned.fill(
-            child: CustomPaint(
-              painter: GeometricPatternPainter(
-                primaryColor: theme.colorScheme.primary,
-                secondaryColor: theme.colorScheme.secondary,
-                isGameScreen: true,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.colorScheme.primary.withOpacity(AppTheme.opacityHigh),
+                    theme.colorScheme.tertiary.withOpacity(AppTheme.opacityMedium),
+                    theme.colorScheme.secondary.withOpacity(AppTheme.opacityLight),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Pattern overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(AppTheme.opacityLight),
+              ),
+              child: CustomPaint(
+                painter: GeometricPatternPainter(
+                  primaryColor: theme.colorScheme.primary,
+                  secondaryColor: theme.colorScheme.secondary,
+                ),
               ),
             ),
           ),
           // Content
           SafeArea(
             child: highScores.isEmpty
-              ? Center(
-                  child: Text(
-                    'No high scores yet!\nPlay some games to set records.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white.withOpacity(AppTheme.opacityHigh),
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(AppTheme.spacing16),
-                  itemCount: highScores.length,
-                  itemBuilder: (context, index) {
-                    final score = highScores[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppTheme.spacing16),
-                      child: ScoreDisplay(
-                        score: score,
+                ? Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    );
-                  },
-                ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.emoji_events_outlined,
+                            size: 48,
+                            color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No high scores yet!',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Play some games to set records.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(AppTheme.spacing16),
+                    itemCount: highScores.length,
+                    itemBuilder: (context, index) {
+                      final score = highScores[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppTheme.spacing16),
+                        child: ScoreDisplay(
+                          score: score,
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

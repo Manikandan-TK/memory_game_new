@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import 'game_screen.dart';
 import '../widgets/difficulty_selector.dart';
 import 'high_scores_screen.dart'; // Added import for HighScoresScreen
+import '../widgets/animated_logo_emojis.dart'; // Added import for AnimatedLogoEmojis
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,13 +30,13 @@ class HomeScreen extends StatelessWidget {
               children: [
                 IconButton.filled(
                   style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surface
-                        .withOpacity(AppTheme.opacityMedium),
+                    backgroundColor:
+                        theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                    foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
                   ),
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.emoji_events_rounded,
                     size: 26,
-                    color: Colors.white.withOpacity(AppTheme.opacityHigh),
                   ),
                   onPressed: () => Navigator.push(
                     context,
@@ -47,13 +48,13 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 IconButton.filled(
                   style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surface
-                        .withOpacity(AppTheme.opacityMedium),
+                    backgroundColor:
+                        theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                    foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
                   ),
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.settings_rounded,
                     size: 26,
-                    color: Colors.white.withOpacity(AppTheme.opacityHigh),
                   ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -113,46 +114,12 @@ class HomeScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Game Icon with Background
-                      Container(
-                        padding: const EdgeInsets.all(AppTheme.spacing16),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              theme.colorScheme.primary
-                                  .withOpacity(AppTheme.opacityMedium),
-                              theme.colorScheme.secondary
-                                  .withOpacity(AppTheme.opacityMedium),
-                            ],
-                          ),
-                          border: Border.all(
-                            color:
-                                Colors.white.withOpacity(AppTheme.opacityLight),
-                            width: 2,
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Icon(
-                              Icons.extension_rounded, // Puzzle piece icon
-                              size: size.height * 0.06,
-                              color: Colors.white
-                                  .withOpacity(AppTheme.opacityHigh),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Icon(
-                                Icons
-                                    .refresh_rounded, // Small refresh icon to indicate memory/matching
-                                size: size.height * 0.025,
-                                color: theme.colorScheme.secondary
-                                    .withOpacity(AppTheme.opacityHigh),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(
+                        height: 80,
+                        width: double.infinity,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.0),
+                          child: AnimatedLogoEmojis(),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -205,13 +172,17 @@ class HomeScreen extends StatelessWidget {
                           child: FilledButton.icon(
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.all(16),
-                              backgroundColor: theme.colorScheme.primary
-                                  .withOpacity(AppTheme.opacityMedium),
-                              foregroundColor: Colors.white
-                                  .withOpacity(AppTheme.opacityHigh),
+                              backgroundColor:
+                                  theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+                              foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             ),
                             onPressed: () {
-                              context.read<GameProvider>().initializeGame();
+                              final gameProvider = context.read<GameProvider>();
+                              gameProvider.resetGame();
+                              gameProvider.initializeGame();
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) => const GameScreen(),
