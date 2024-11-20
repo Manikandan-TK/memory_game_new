@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/card_model.dart';
 import '../providers/card_theme_provider.dart';
+import '../providers/game_provider.dart';
 import 'card_face.dart';
 import 'card_back_widget.dart';
 
@@ -20,6 +21,7 @@ class MemoryCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardTheme = context.watch<CardThemeProvider>().currentTheme;
+    final gameProvider = context.watch<GameProvider>();
     final cardSize = size ?? 100.0;
     final isSmallScreen = MediaQuery.of(context).size.width < 400;
 
@@ -29,6 +31,7 @@ class MemoryCardWidget extends StatelessWidget {
         isFlipped: card.isFlipped,
         isMatched: card.isMatched,
         size: cardSize,
+        difficulty: gameProvider.config.difficulty,
         front: Center(
           child: FittedBox(
             fit: BoxFit.contain,

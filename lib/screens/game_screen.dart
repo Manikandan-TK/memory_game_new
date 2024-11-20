@@ -121,6 +121,7 @@ class GameScreen extends StatelessWidget {
                             horizontal: horizontalPadding / 2,
                           ),
                           child: GridView.builder(
+                            physics: const BouncingScrollPhysics(),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: columns,
                               childAspectRatio: 1.0,  
@@ -128,12 +129,16 @@ class GameScreen extends StatelessWidget {
                               mainAxisSpacing: gridSpacing,
                             ),
                             itemCount: gameProvider.cards.length,
+                            cacheExtent: 0, // Disable caching to prevent animation issues
                             itemBuilder: (context, index) {
                               final card = gameProvider.cards[index];
-                              return MemoryCardWidget(
-                                card: card,
-                                size: constrainedCardSize,
-                                onTap: () => gameProvider.flipCard(index),
+                              return RepaintBoundary(
+                                child: MemoryCardWidget(
+                                  key: ValueKey(card.id),
+                                  card: card,
+                                  size: constrainedCardSize,
+                                  onTap: () => gameProvider.flipCard(index),
+                                ),
                               );
                             },
                           ),

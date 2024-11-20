@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'animations/card_animation_mixin.dart';
 import 'animations/card_animation_builder.dart';
+import '../models/game_config.dart';
 
 /// Represents a single side (face) of the memory card
 class CardFace extends StatefulWidget {
@@ -10,6 +11,7 @@ class CardFace extends StatefulWidget {
   final Widget back;
   final double size;
   final Color glowColor;
+  final GameDifficulty difficulty;
 
   const CardFace({
     Key? key,
@@ -18,6 +20,7 @@ class CardFace extends StatefulWidget {
     required this.front,
     required this.back,
     required this.size,
+    required this.difficulty,
     this.glowColor = Colors.green,
   }) : super(key: key);
 
@@ -28,6 +31,9 @@ class CardFace extends StatefulWidget {
 class _CardFaceState extends State<CardFace> with TickerProviderStateMixin, CardAnimationMixin<CardFace> {
   bool _wasFlipped = false;
   bool _wasMatched = false;
+
+  @override
+  GameDifficulty get difficulty => widget.difficulty;
 
   @override
   void didUpdateWidget(CardFace oldWidget) {
@@ -50,6 +56,7 @@ class _CardFaceState extends State<CardFace> with TickerProviderStateMixin, Card
       isMatched: widget.isMatched,
       glowColor: widget.glowColor,
       cardSize: widget.size,
+      difficulty: widget.difficulty,
       child: widget.isFlipped ? widget.front : widget.back,
     );
   }

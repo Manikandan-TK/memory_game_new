@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/game_config.dart';
+import 'animation_config.dart';
 
 /// Interface defining animation behavior
 abstract class CardAnimationController {
@@ -9,12 +11,16 @@ abstract class CardAnimationController {
   void startFlipAnimation(bool forward);
   void startMatchAnimation();
   void dispose();
+  void reset();
 }
 
 /// Implementation of card animation controller
 class DefaultCardAnimationController implements CardAnimationController {
   final TickerProvider vsync;
+  final GameDifficulty difficulty;
   late final AnimationController _controller;
+  late final CardAnimationConfig _config;
+  bool _isDisposed = false;
   
   @override
   late final Animation<double> flipAnimation;
@@ -25,13 +31,17 @@ class DefaultCardAnimationController implements CardAnimationController {
   @override
   late final Animation<double> glowAnimation;
 
-  DefaultCardAnimationController({required this.vsync}) {
+  DefaultCardAnimationController({
+    required this.vsync,
+    required this.difficulty,
+  }) {
+    _config = CardAnimationConfig.forDifficulty(difficulty);
     _initializeAnimations();
   }
 
   void _initializeAnimations() {
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: _config.duration,
       vsync: vsync,
     );
 
@@ -40,16 +50,16 @@ class DefaultCardAnimationController implements CardAnimationController {
       end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: _config.flipCurve,
     ));
 
     scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.15),
+        tween: Tween<double>(begin: 1.0, end: _config.maxScale),
         weight: 35,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.15, end: 0.95),
+        tween: Tween<double>(begin: _config.maxScale, end: 0.95),
         weight: 30,
       ),
       TweenSequenceItem(
@@ -58,7 +68,7 @@ class DefaultCardAnimationController implements CardAnimationController {
       ),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 1.0, curve: Curves.easeInOutCubic),
+      curve: _config.scaleCurve,
     ));
 
     glowAnimation = TweenSequence<double>([
@@ -76,12 +86,13 @@ class DefaultCardAnimationController implements CardAnimationController {
       ),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic),
+      curve: _config.glowCurve,
     ));
   }
 
   @override
   void startFlipAnimation(bool forward) {
+    if (_isDisposed) return;
     if (forward) {
       _controller.forward();
     } else {
@@ -91,12 +102,23 @@ class DefaultCardAnimationController implements CardAnimationController {
 
   @override
   void startMatchAnimation() {
+    if (_isDisposed) return;
     _controller.reset();
     _controller.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (!_isDisposed) {
+      _isDisposed = true;
+      _controller.stop();
+      _controller.dispose();
+    }
+  }
+
+  @override
+  void reset() {
+    if (_isDisposed) return;
+    _controller.reset();
   }
 }

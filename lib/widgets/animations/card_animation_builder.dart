@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'animation_controller.dart';
+import 'animation_config.dart';
+import '../../models/game_config.dart';
 
 /// Widget that builds card animations
 class CardAnimationBuilder extends StatelessWidget {
@@ -10,6 +12,7 @@ class CardAnimationBuilder extends StatelessWidget {
   final Widget child;
   final Color glowColor;
   final double cardSize;
+  final GameDifficulty difficulty;
 
   const CardAnimationBuilder({
     Key? key,
@@ -19,28 +22,35 @@ class CardAnimationBuilder extends StatelessWidget {
     required this.child,
     required this.glowColor,
     required this.cardSize,
+    required this.difficulty,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final config = CardAnimationConfig.forDifficulty(difficulty);
+    
     return AnimatedBuilder(
-      animation: controller.flipAnimation,
+      animation: Listenable.merge([
+        controller.flipAnimation,
+        controller.scaleAnimation,
+        controller.glowAnimation,
+      ]),
       builder: (context, child) {
         return Transform(
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.002) // Perspective
+            ..setEntry(3, 2, config.perspectiveValue)
             ..rotateY(isFlipped ? math.pi * controller.flipAnimation.value : 0),
           alignment: Alignment.center,
           child: Transform.scale(
-            scale: isMatched ? controller.scaleAnimation.value : 1.0,
+            scale: isMatched ? 1.0 : (controller.scaleAnimation.value),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 boxShadow: [
                   if (isMatched)
                     BoxShadow(
-                      color: glowColor.withOpacity(controller.glowAnimation.value),
+                      color: glowColor.withOpacity(0.4),
                       blurRadius: cardSize * 0.2,
-                      spreadRadius: 4,
+                      spreadRadius: cardSize * 0.05,
                     ),
                 ],
               ),
