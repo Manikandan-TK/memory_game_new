@@ -2,109 +2,58 @@ import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../models/card_model.dart';
 import '../models/game_config.dart';
+import '../models/game_state.dart';
 import '../utils/logger.dart';
 import 'package:provider/provider.dart';
 import 'score_provider.dart';
 import '../main.dart';
 
+/// Provider that manages game state and operations
+/// Following Open/Closed Principle - extends functionality through composition
 class GameProvider extends ChangeNotifier {
-  // Game configuration
-  GameConfig _config = const GameConfig.defaultConfig();
-  GameConfig get config => _config;
+  GameState _state;
+  Duration? _pauseStartTime;
 
-  GameProvider() {
-    GameLogger.i('Game provider initialized with difficulty: ${_config.difficulty}');
+  GameProvider() : _state = GameState.initial(const GameConfig.defaultConfig()) {
+    GameLogger.i('Game provider initialized with difficulty: ${_state.config.difficulty}');
   }
 
-  // Game state
-  bool _isInitialized = false;
-  bool get isInitialized => _isInitialized;
-
-  // Game metrics
-  int _moves = 0;
-  int get moves => _moves;
-
-  int _matches = 0;
-  int get matches => _matches;
-
-  bool _isGameComplete = false;
-  bool get isGameComplete => _isGameComplete;
-
-  bool _isProcessing = false;
-  bool get isProcessing => _isProcessing;
-
+  // Getters
+  GameState get state => _state;
+  bool get isInitialized => _state.isInitialized;
+  bool get isPaused => _state.isPaused;
+  bool get isGameComplete => _state.isGameComplete;
+  bool get isProcessing => _state.isProcessing;
+  int get moves => _state.moves;
+  int get matches => _state.matches;
+  List<MemoryCard> get cards => _state.cards;
+  GameConfig get config => _state.config;
+  
   // Current score from ScoreProvider
-  int get currentScore => Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false).currentScore?.value ?? 0;
+  int get currentScore => Provider.of<ScoreProvider>(
+    navigatorKey.currentContext!, 
+    listen: false
+  ).currentScore?.value ?? 0;
 
-  // Cards state
-  List<MemoryCard> _cards = [];
-  List<MemoryCard> get cards => List.unmodifiable(_cards);
-
-  // Using a map to track flipped cards by their IDs for better performance
-  final List<MemoryCard> _flippedCards = [];
-  List<MemoryCard> get flippedCards => List.unmodifiable(_flippedCards);
-
-  // List of emojis for card pairs
-  final List<String> emojis = [
-    '🐶',
-    '🐱',
-    '🐭',
-    '🐹',
-    '🐰',
-    '🦊',
-    '🐻',
-    '🐼',
-    '🐨',
-    '🐯',
-    '🦁',
-    '🐮',
-    '🐷',
-    '🐸',
-    '🐵',
-    '🦄',
-    '🐔',
-    '🐧',
-    '🐦',
-    '🐤',
-    '🦆',
-    '🦅',
-    '🦉',
-    '🦇',
-  ];
-
-  // Scoring system
-  static const int basePoints = 100;
-  static const int comboBonus = 50;
-  static const int movePenalty = 10;
-  static const double maxTimeMultiplier = 1.5;
-
-  int _startTime = 0;
-
-  // Update difficulty and reinitialize game
-  void updateDifficulty(GameDifficulty difficulty) {
-    if (_config.difficulty == difficulty) {
-      return; // Don't reinitialize if same difficulty
-    }
-
-    _config = _config.copyWith(difficulty: difficulty);
-    _isInitialized = false;
-    initializeGame();
+  void _updateState(GameState newState) {
+    _state = newState;
     notifyListeners();
   }
 
-  // Initialize game with current configuration
+  // Game Lifecycle Methods
   void initializeGame() {
-    if (_isInitialized) return;
+    if (_state.isInitialized) return;
 
     try {
-      _startTime = DateTime.now().millisecondsSinceEpoch;
-      final (rows, columns) = _config.difficulty.gridSize;
-      final numberOfPairs = _config.difficulty.numberOfPairs;
+      final (rows, columns) = _state.config.difficulty.gridSize;
+      final numberOfPairs = _state.config.difficulty.numberOfPairs;
 
       // Reset score at game start
       if (navigatorKey.currentContext != null) {
-        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-            .resetScore();
+        Provider.of<ScoreProvider>(
+          navigatorKey.currentContext!, 
+          listen: false
+        ).resetScore();
       }
 
       // Validate configuration
@@ -116,30 +65,15 @@ class GameProvider extends ChangeNotifier {
         throw ArgumentError('Invalid number of pairs: $numberOfPairs');
       }
 
-      // Ensure we have enough emojis for the selected difficulty
-      if (emojis.length < numberOfPairs) {
-        throw StateError(
-          'Not enough emojis (${emojis.length}) for the selected difficulty ($numberOfPairs pairs needed)',
-        );
-      }
-
-      // Reset game state
-      _moves = 0;
-      _matches = 0;
-      _isGameComplete = false;
-      _isProcessing = false;
-      _flippedCards.clear();
-
       // Create shuffled list of emojis for pairs
-      final shuffledEmojis = emojis.take(numberOfPairs).toList()
-        ..shuffle(math.Random());
+      final shuffledEmojis = emojis.take(numberOfPairs).toList()..shuffle(math.Random());
 
       // Create pairs of cards with unique IDs
-      _cards = [];
+      final cards = <MemoryCard>[];
       var cardId = 0;
       for (var i = 0; i < numberOfPairs; i++) {
         for (var j = 0; j < 2; j++) {
-          _cards.add(MemoryCard(
+          cards.add(MemoryCard(
             id: cardId++,
             emoji: shuffledEmojis[i],
             isFlipped: false,
@@ -149,162 +83,159 @@ class GameProvider extends ChangeNotifier {
       }
 
       // Shuffle all cards
-      _cards.shuffle(math.Random());
-      _isInitialized = true;
+      cards.shuffle(math.Random());
 
-      GameLogger.i('Game initialized with difficulty: ${_config.difficulty}');
-      notifyListeners();
+      _updateState(_state.copyWith(
+        isInitialized: true,
+        cards: cards,
+        startTime: DateTime.now().millisecondsSinceEpoch,
+      ));
+
+      GameLogger.i('Game initialized with difficulty: ${_state.config.difficulty}');
     } catch (e) {
       GameLogger.e('Error initializing game', e);
-      _isInitialized = false;
-      rethrow; // Rethrow to let UI handle the error
+      _updateState(_state.copyWith(isInitialized: false));
+      rethrow;
     }
   }
 
-  // Flip a card at the given index
+  void resetGame() {
+    _updateState(GameState.initial(_state.config));
+    initializeGame();
+  }
+
+  void pauseGame() {
+    if (!_state.isInProgress) return;
+    _pauseStartTime = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(_state.startTime)
+    );
+    _updateState(_state.copyWith(isPaused: true));
+  }
+
+  void resumeGame() {
+    if (!_state.isPaused) return;
+    final pausedDuration = _state.pausedDuration ?? Duration.zero;
+    final additionalPauseDuration = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(_state.startTime)
+    ) - _pauseStartTime!;
+    
+    _updateState(_state.copyWith(
+      isPaused: false,
+      pausedDuration: pausedDuration + additionalPauseDuration,
+    ));
+    _pauseStartTime = null;
+  }
+
+  // Game Play Methods
   Future<void> flipCard(int index) async {
     // Defensive programming checks
-    if (!_isInitialized) {
-      GameLogger.d('Game not initialized');
-      return;
-    }
-
-    if (_isProcessing) {
-      GameLogger.d('Card flip in progress');
-      return;
-    }
-
-    if (index < 0 || index >= _cards.length) {
-      GameLogger.d('Invalid card index: $index');
-      return;
-    }
-
-    final card = _cards[index];
-    if (card.isMatched || card.isFlipped) {
-      GameLogger.d('Card already matched or flipped');
-      return;
-    }
-
-    if (_flippedCards.length >= 2) {
-      GameLogger.d('Maximum cards already flipped');
+    if (!_state.isInProgress || 
+        index < 0 || 
+        index >= _state.cards.length ||
+        _state.cards[index].isMatched || 
+        _state.cards[index].isFlipped ||
+        _state.flippedCards.length >= 2) {
       return;
     }
 
     try {
-      _isProcessing = true;
-      notifyListeners();
+      _updateState(_state.copyWith(isProcessing: true));
 
       // Flip the card
-      _cards[index] = card.copyWith(isFlipped: true);
-      _flippedCards.add(_cards[index]);
+      final updatedCards = List<MemoryCard>.from(_state.cards);
+      updatedCards[index] = updatedCards[index].copyWith(isFlipped: true);
+      
+      final updatedFlippedCards = List<MemoryCard>.from(_state.flippedCards)
+        ..add(updatedCards[index]);
+
+      _updateState(_state.copyWith(
+        cards: updatedCards,
+        flippedCards: updatedFlippedCards,
+      ));
 
       // If we have two cards flipped, check for a match
-      if (_flippedCards.length == 2) {
-        _moves++;
-
-        // Update score on each move
-        final currentTime = DateTime.now().millisecondsSinceEpoch;
-        final duration = Duration(milliseconds: currentTime - _startTime);
-        if (navigatorKey.currentContext != null) {
-          Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-              .updateScore(
-                moves: _moves,
-                time: duration,
-                difficulty: _config.difficulty,
-              );
-        }
-
+      if (updatedFlippedCards.length == 2) {
         await _processMatch();
       }
-
-      notifyListeners();
     } finally {
-      _isProcessing = false;
-      notifyListeners();
+      _updateState(_state.copyWith(isProcessing: false));
     }
   }
 
-  // Process card matches
   Future<void> _processMatch() async {
-    if (_flippedCards.length != 2) return;
+    if (_state.flippedCards.length != 2) return;
 
-    GameLogger.d(
-        'Processing match: ${_flippedCards.map((c) => c.emoji).join(" vs ")}');
-    final isMatch = _flippedCards[0].emoji == _flippedCards[1].emoji;
+    final isMatch = _state.flippedCards[0].emoji == _state.flippedCards[1].emoji;
+    final updatedCards = List<MemoryCard>.from(_state.cards);
 
-    // Calculate current duration for score update
-    final currentTime = DateTime.now().millisecondsSinceEpoch;
-    final duration = Duration(milliseconds: currentTime - _startTime);
+    // Update score
+    if (navigatorKey.currentContext != null) {
+      Provider.of<ScoreProvider>(
+        navigatorKey.currentContext!, 
+        listen: false
+      ).updateScore(
+        moves: _state.moves + 1,
+        time: _state.currentDuration,
+        difficulty: _state.config.difficulty,
+        isMatch: isMatch,
+      );
+    }
 
     if (isMatch) {
-      GameLogger.i('Match found! 🎯 ${_flippedCards[0].emoji}');
       // Mark cards as matched
-      for (var card in _flippedCards) {
-        final index = _cards.indexWhere((c) => c.id == card.id);
-        _cards[index] = card.copyWith(isMatched: true);
-      }
-      _matches++;
-
-      // Update score with match bonus
-      if (navigatorKey.currentContext != null) {
-        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-            .updateScore(
-              moves: _moves,
-              time: duration,
-              difficulty: _config.difficulty,
-              isMatch: true,
-            );
+      for (var card in _state.flippedCards) {
+        final index = updatedCards.indexWhere((c) => c.id == card.id);
+        updatedCards[index] = card.copyWith(isMatched: true);
       }
 
-      // Check if game is complete
-      if (_matches == _config.difficulty.numberOfPairs) {
-        GameLogger.i(
-            '🏆 Game complete! Moves: $_moves | Matches: $_matches');
-        _isGameComplete = true;
-        
-        // Finalize score and add to high scores
-        if (navigatorKey.currentContext != null) {
-          Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-              .finalizeScore();
-        }
+      final newMatches = _state.matches + 1;
+      final isComplete = newMatches == _state.config.difficulty.numberOfPairs;
+
+      _updateState(_state.copyWith(
+        cards: updatedCards,
+        matches: newMatches,
+        isGameComplete: isComplete,
+        flippedCards: [],
+        moves: _state.moves + 1,
+      ));
+
+      if (isComplete && navigatorKey.currentContext != null) {
+        Provider.of<ScoreProvider>(
+          navigatorKey.currentContext!, 
+          listen: false
+        ).finalizeScore();
       }
     } else {
-      GameLogger.i(
-          'No match: ${_flippedCards[0].emoji} ≠ ${_flippedCards[1].emoji}');
-      // Update score without match bonus
-      if (navigatorKey.currentContext != null) {
-        Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-            .updateScore(
-              moves: _moves,
-              time: duration,
-              difficulty: _config.difficulty,
-              isMatch: false,
-            );
-      }
+      _updateState(_state.copyWith(
+        moves: _state.moves + 1,
+      ));
 
       // Wait before flipping cards back
       await Future.delayed(const Duration(milliseconds: 500));
-      for (var card in _flippedCards) {
-        final index = _cards.indexWhere((c) => c.id == card.id);
-        _cards[index] = card.copyWith(isFlipped: false);
-      }
-    }
 
-    _flippedCards.clear();
-    GameLogger.d(
-        'Match processing complete. Cards in play: ${_cards.where((c) => c.isFlipped).length}');
-    notifyListeners();
+      // Flip cards back
+      for (var card in _state.flippedCards) {
+        final index = updatedCards.indexWhere((c) => c.id == card.id);
+        updatedCards[index] = card.copyWith(isFlipped: false);
+      }
+
+      _updateState(_state.copyWith(
+        cards: updatedCards,
+        flippedCards: [],
+      ));
+    }
   }
 
-  // Reset game with current configuration
-  void resetGame() {
-    // Reset score provider
-    if (navigatorKey.currentContext != null) {
-      Provider.of<ScoreProvider>(navigatorKey.currentContext!, listen: false)
-          .resetScore();
-    }
-
-    _isInitialized = false;
+  void updateDifficulty(GameDifficulty difficulty) {
+    if (_state.config.difficulty == difficulty) return;
+    _updateState(GameState.initial(_state.config.copyWith(difficulty: difficulty)));
     initializeGame();
   }
+
+  // List of emojis for card pairs
+  static const List<String> emojis = [
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
+    '🦁', '🐮', '🐷', '🐸', '🐵', '🦄', '🐔', '🐧', '🐦', '🐤',
+    '🦆', '🦅', '🦉', '🦇',
+  ];
 }
