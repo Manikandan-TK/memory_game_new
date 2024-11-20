@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Background gradient layers
+          // Background gradient
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -77,27 +77,19 @@ class HomeScreen extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     theme.colorScheme.primary.withOpacity(AppTheme.opacityHigh),
-                    theme.colorScheme.tertiary
-                        .withOpacity(AppTheme.opacityMedium),
-                    theme.colorScheme.secondary
-                        .withOpacity(AppTheme.opacityLight),
+                    theme.colorScheme.tertiary.withOpacity(AppTheme.opacityMedium),
+                    theme.colorScheme.secondary.withOpacity(AppTheme.opacityLight),
                   ],
                 ),
               ),
             ),
           ),
-          // Animated pattern overlay
+          // Pattern overlay
           Positioned.fill(
-            child: ShaderMask(
-              blendMode: BlendMode.plus,
-              shaderCallback: (bounds) => LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withOpacity(AppTheme.opacityMedium),
-                  Colors.white.withOpacity(AppTheme.opacityLight),
-                ],
-              ).createShader(bounds),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(AppTheme.opacityLight),
+              ),
               child: CustomPaint(
                 painter: GeometricPatternPainter(
                   primaryColor: theme.colorScheme.primary,

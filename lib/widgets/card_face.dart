@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart' hide CardTheme;
 import '../models/card_model.dart';
-import '../providers/card_theme_provider.dart';
-import '../widgets/card_pattern_painter.dart';
 import '../models/card_theme.dart';
 
 /// Represents a single side (face) of the memory card
@@ -10,7 +8,6 @@ class CardFace extends StatelessWidget {
   final CardTheme cardTheme;
   final bool isFront;
   final double? size;
-  final VoidCallback? onTap;
   final bool isFlipped;
 
   const CardFace({
@@ -19,111 +16,49 @@ class CardFace extends StatelessWidget {
     required this.cardTheme,
     required this.isFront,
     this.size,
-    this.onTap,
     required this.isFlipped,
   }) : super(key: key);
 
-  Color _getBorderColor(ColorScheme colorScheme) {
-    if (card.isMatched) {
-      return Colors.green;
-    }
-    return isFlipped
-        ? cardTheme.primaryColor
-        : colorScheme.outline;
-  }
-
-  List<BoxShadow>? _getBoxShadow() {
-    if (!isFlipped && !card.isMatched) return null;
-
-    return [
-      BoxShadow(
-        color: card.isMatched
-            ? Colors.green.withOpacity(0.3)
-            : cardTheme.primaryColor.withOpacity(0.3),
-        blurRadius: 8,
-        spreadRadius: 1,
-      ),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: RepaintBoundary(
-        child: Material(
-          elevation: isFlipped ? 8 : 2,
-          shadowColor: card.isMatched
-              ? Colors.green.withOpacity(0.5)
-              : colorScheme.shadow.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getBorderColor(colorScheme),
-                  width: 2,
-                ),
-                color: cardTheme.primaryColor.withOpacity(0.1),
-                boxShadow: _getBoxShadow(),
-              ),
-              child: isFront
-                  ? Stack(
-                      children: [
-                        CustomPaint(
-                          painter: CardPatternPainter(
-                            primaryColor: cardTheme.primaryColor,
-                            secondaryColor: cardTheme.secondaryColor,
-                            themeType: cardTheme.type,
-                          ),
-                          child: const SizedBox(
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                        ),
-                        Center(
-                          child: Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            alignment: Alignment.center,
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Text(
-                                  card.emoji,
-                                  style: TextStyle(
-                                    fontSize: size != null ? size! * 0.85 : 40,
-                                    height: 1,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : CustomPaint(
-                      painter: CardPatternPainter(
-                        primaryColor: cardTheme.primaryColor,
-                        secondaryColor: cardTheme.secondaryColor,
-                        themeType: cardTheme.type,
-                      ),
-                      child: const SizedBox(
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                    ),
-            ),
-          ),
+    final cardSize = size ?? 100.0;
+    final isSmallScreen = MediaQuery.of(context).size.width < 400;
+    
+    return Container(
+      width: cardSize,
+      height: cardSize,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(cardSize * 0.12),  // Proportional border radius
+        border: Border.all(
+          color: card.isMatched ? Colors.green : cardTheme.primaryColor,
+          width: isSmallScreen ? 2.0 : 2.5,
         ),
+        color: isFront ? cardTheme.primaryColor : cardTheme.secondaryColor,
+        boxShadow: [
+          BoxShadow(
+            color: cardTheme.primaryColor.withOpacity(0.2),
+            blurRadius: cardSize * 0.04,  // Proportional blur
+            offset: Offset(0, cardSize * 0.02),  // Proportional offset
+          ),
+        ],
       ),
+      child: isFront
+          ? Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Padding(
+                  padding: EdgeInsets.all(cardSize * 0.04),  // Minimal padding for maximum emoji size
+                  child: Text(
+                    card.emoji,
+                    style: TextStyle(
+                      fontSize: cardSize * (isSmallScreen ? 0.9 : 0.95),  // Maximum practical emoji size
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

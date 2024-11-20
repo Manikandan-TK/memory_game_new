@@ -115,29 +115,12 @@ class DifficultySelector extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          difficultyColor,
-                          difficultyColor.withOpacity(0.8),
-                        ],
-                      ).createShader(bounds),
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          shadows: [
-                            Shadow(
-                              color: difficultyColor.withOpacity(0.5),
-                              offset: const Offset(1, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: difficultyColor,
+                        fontSize: 18,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: AppTheme.spacing4),

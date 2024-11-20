@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:memory_game_new/models/game_config.dart';
-import 'package:memory_game_new/widgets/geometric_pattern_painter.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../widgets/memory_card_widget.dart';
@@ -49,255 +48,199 @@ class GameScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Background gradient layers
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    theme.colorScheme.primary
-                        .withOpacity(AppTheme.opacityMedium),
-                    theme.colorScheme.surface,
-                  ],
-                  stops: const [0.0, 0.7],
-                ),
-              ),
-            ),
-          ),
-          // Subtle pattern overlay
-          Positioned.fill(
-            child: ShaderMask(
-              blendMode: BlendMode.plus,
-              shaderCallback: (bounds) => LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withOpacity(AppTheme.opacityMedium),
-                  Colors.white.withOpacity(AppTheme.opacityLight),
-                ],
-              ).createShader(bounds),
-              child: CustomPaint(
-                painter: GeometricPatternPainter(
-                  primaryColor: theme.colorScheme.primary,
-                  secondaryColor: theme.colorScheme.secondary,
-                  isGameScreen: true,
-                ),
-              ),
-            ),
-          ),
-          // Main content
-          SafeArea(
-            child: Consumer<GameProvider>(
-              builder: (context, gameProvider, child) {
-                if (!gameProvider.isInitialized) {
-                  gameProvider.initializeGame();
-                }
-                return Column(
-                  children: [
+      body: Container(
+        color: theme.colorScheme.surface,
+        child: SafeArea(
+          child: Consumer<GameProvider>(
+            builder: (context, gameProvider, child) {
+              if (!gameProvider.isInitialized) {
+                gameProvider.initializeGame();
+              }
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(AppTheme.spacing16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildGameMetric(
+                          context,
+                          'Score',
+                          gameProvider.currentScore.toString(),
+                          Icons.stars_rounded,
+                        ),
+                        _buildGameMetric(
+                          context,
+                          'Moves',
+                          gameProvider.moves.toString(),
+                          Icons.touch_app_rounded,
+                        ),
+                        _buildGameMetric(
+                          context,
+                          'Matches',
+                          '${gameProvider.matches}/${gameProvider.config.difficulty.numberOfPairs}',
+                          Icons.favorite_rounded,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final (rows, columns) =
+                            gameProvider.config.difficulty.gridSize;
+                        final isHardMode = gameProvider.config.difficulty ==
+                            GameDifficulty.hard;
+
+                        // Calculate optimal card size based on screen dimensions
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final screenHeight = constraints.maxHeight;
+                        const horizontalPadding = 16.0;
+                        
+                        // Adjust spacing based on screen size
+                        final gridSpacing = screenWidth < 400 ? 8.0 : 12.0;
+                        
+                        // Calculate available space
+                        final availableWidth = screenWidth - horizontalPadding;
+                        final availableHeight = screenHeight - (gridSpacing * (rows - 1));
+                        
+                        // Calculate card size to fit both width and height constraints
+                        final cardWidthByColumns = (availableWidth - (gridSpacing * (columns - 1))) / columns;
+                        final cardHeightByRows = (availableHeight - 16) / rows;  // Additional padding for safety
+                        
+                        // Use the smaller dimension to ensure square cards that fit the screen
+                        final cardSize = (cardWidthByColumns < cardHeightByRows 
+                            ? cardWidthByColumns 
+                            : cardHeightByRows).floorToDouble();
+
+                        // Ensure minimum and maximum card sizes for different devices
+                        final constrainedCardSize = cardSize.clamp(
+                          60.0,  // Minimum card size
+                          screenWidth < 400 ? 100.0 : 120.0  // Maximum card size based on screen width
+                        );
+                        
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: horizontalPadding / 2,
+                          ),
+                          child: GridView.builder(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: columns,
+                              childAspectRatio: 1.0,  
+                              crossAxisSpacing: gridSpacing,
+                              mainAxisSpacing: gridSpacing,
+                            ),
+                            itemCount: gameProvider.cards.length,
+                            itemBuilder: (context, index) {
+                              final card = gameProvider.cards[index];
+                              return MemoryCardWidget(
+                                card: card,
+                                size: constrainedCardSize,
+                                onTap: () => gameProvider.flipCard(index),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (gameProvider.isGameComplete)
                     Padding(
-                      padding: const EdgeInsets.all(AppTheme.spacing16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
                         children: [
-                          _buildGameMetric(
-                            context,
-                            'Score',
-                            gameProvider.currentScore.toString(),
-                            Icons.stars_rounded,
+                          Text(
+                            'Congratulations!',
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              color: Colors.white
+                                  .withOpacity(AppTheme.opacityHigh),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          _buildGameMetric(
-                            context,
-                            'Moves',
-                            gameProvider.moves.toString(),
-                            Icons.touch_app_rounded,
-                          ),
-                          _buildGameMetric(
-                            context,
-                            'Matches',
-                            '${gameProvider.matches}/${gameProvider.config.difficulty.numberOfPairs}',
-                            Icons.favorite_rounded,
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: size.width * 0.4,
+                                height: 80,
+                                child: FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.primary
+                                        .withOpacity(AppTheme.opacityMedium),
+                                    foregroundColor: Colors.white
+                                        .withOpacity(AppTheme.opacityHigh),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.all(20),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const HighScoresScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.emoji_events_rounded,
+                                        size: 36,
+                                        color: Colors.white.withOpacity(
+                                            AppTheme.opacityHigh),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: size.width * 0.4,
+                                height: 80,
+                                child: FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.primary
+                                        .withOpacity(AppTheme.opacityMedium),
+                                    foregroundColor: Colors.white
+                                        .withOpacity(AppTheme.opacityHigh),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.all(20),
+                                  ),
+                                  onPressed: () {
+                                    gameProvider.resetGame();
+                                    Navigator.pop(context);
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.home_rounded,
+                                        size: 36,
+                                        color: Colors.white.withOpacity(
+                                            AppTheme.opacityHigh),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final (rows, columns) =
-                              gameProvider.config.difficulty.gridSize;
-                          final isHardMode = gameProvider.config.difficulty ==
-                              GameDifficulty.hard;
-
-                          // Calculate optimal card size based on screen width
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          const horizontalPadding = 16.0;
-                          const gridSpacing = 8.0;
-                          final availableWidth =
-                              screenWidth - horizontalPadding;
-                          final cardWidth =
-                              (availableWidth - (gridSpacing * (columns - 1))) /
-                                  columns;
-
-                          // Calculate total height needed
-                          final totalHeight =
-                              (cardWidth * rows) + (gridSpacing * (rows - 1));
-                          final viewportHeight = constraints.maxHeight;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: horizontalPadding / 2),
-                            child: ScrollConfiguration(
-                              // Custom scroll behavior for smoother scrolling
-                              behavior:
-                                  ScrollConfiguration.of(context).copyWith(
-                                physics: const BouncingScrollPhysics(
-                                  parent: AlwaysScrollableScrollPhysics(),
-                                ),
-                                scrollbars: false,
-                              ),
-                              child: GridView.builder(
-                                // Keep items in memory even when not visible
-                                addRepaintBoundaries: true,
-                                addAutomaticKeepAlives: true,
-                                // Use builder for better performance
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  mainAxisSpacing: gridSpacing,
-                                  crossAxisSpacing: gridSpacing,
-                                  childAspectRatio: 1, // Cards are square
-                                ),
-                                // Optimize scrolling behavior based on content size
-                                physics: isHardMode
-                                    ? (totalHeight > viewportHeight
-                                        ? const AlwaysScrollableScrollPhysics(
-                                            parent: BouncingScrollPhysics(),
-                                          )
-                                        : const NeverScrollableScrollPhysics())
-                                    : const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(4),
-                                itemCount: gameProvider.cards.length,
-                                // Increase cache extent for better scrolling performance
-                                cacheExtent: cardWidth * 4,
-                                itemBuilder: (context, index) {
-                                  final card = gameProvider.cards[index];
-                                  return MemoryCardWidget(
-                                    // Use a unique key combining card ID and state
-                                    key: ObjectKey(
-                                        '${card.id}_${card.isMatched}_${card.isFlipped}'),
-                                    card: card,
-                                    onTap: () => gameProvider.flipCard(index),
-                                    size: cardWidth,
-                                  );
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    if (gameProvider.isGameComplete)
-                      Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Congratulations!',
-                              style: theme.textTheme.displaySmall?.copyWith(
-                                color: Colors.white
-                                    .withOpacity(AppTheme.opacityHigh),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: size.width * 0.4,
-                                  height: 80,
-                                  child: FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary
-                                          .withOpacity(AppTheme.opacityMedium),
-                                      foregroundColor: Colors.white
-                                          .withOpacity(AppTheme.opacityHigh),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      padding: const EdgeInsets.all(20),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const HighScoresScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.emoji_events_rounded,
-                                          size: 36,
-                                          color: Colors.white.withOpacity(
-                                              AppTheme.opacityHigh),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                SizedBox(
-                                  width: size.width * 0.4,
-                                  height: 80,
-                                  child: FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary
-                                          .withOpacity(AppTheme.opacityMedium),
-                                      foregroundColor: Colors.white
-                                          .withOpacity(AppTheme.opacityHigh),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      padding: const EdgeInsets.all(20),
-                                    ),
-                                    onPressed: () {
-                                      gameProvider.resetGame();
-                                      Navigator.pop(context);
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.home_rounded,
-                                          size: 36,
-                                          color: Colors.white.withOpacity(
-                                              AppTheme.opacityHigh),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+                ],
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }
@@ -315,15 +258,8 @@ class GameScreen extends StatelessWidget {
         vertical: AppTheme.spacing8,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -334,13 +270,13 @@ class GameScreen extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                color: theme.colorScheme.onSurface,
               ),
               const SizedBox(width: AppTheme.spacing4),
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -349,7 +285,7 @@ class GameScreen extends StatelessWidget {
           Text(
             value,
             style: theme.textTheme.titleMedium?.copyWith(
-              color: Colors.white.withOpacity(AppTheme.opacityHigh),
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
