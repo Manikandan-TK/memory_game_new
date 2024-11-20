@@ -16,7 +16,7 @@ void main() {
       // Time penalty: 30 seconds * 2 points = -60
       // Difficulty multiplier: 1.0 (easy)
       // Expected: (1000 - 100 - 60) * 1.0 = 840
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 10,
         time: const Duration(seconds: 30),
         difficulty: GameDifficulty.easy,
@@ -34,7 +34,7 @@ void main() {
       // Time penalty: 30 seconds * 2 points = -60
       // Difficulty multiplier: 1.5 (medium)
       // Expected: (1000 - 100 - 60) * 1.5 = 1260
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 10,
         time: const Duration(seconds: 30),
         difficulty: GameDifficulty.medium,
@@ -50,7 +50,7 @@ void main() {
       // Time penalty: 30 seconds * 2 points = -60
       // Difficulty multiplier: 2.0 (hard)
       // Expected: (1000 - 100 - 60) * 2.0 = 1680
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 10,
         time: const Duration(seconds: 30),
         difficulty: GameDifficulty.hard,
@@ -62,7 +62,7 @@ void main() {
 
     test('should not allow negative scores', () {
       // Using very high penalties that would result in negative score
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 1000, // -10000 points
         time: const Duration(seconds: 1000), // -2000 points
         difficulty: GameDifficulty.easy,
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('should reset score correctly', () {
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 10,
         time: const Duration(seconds: 30),
         difficulty: GameDifficulty.easy,
@@ -80,13 +80,14 @@ void main() {
 
       expect(scoreProvider.currentScore, isNotNull);
 
-      scoreProvider.resetCurrentScore();
+      scoreProvider.resetScore();
+      
       expect(scoreProvider.currentScore, isNull);
     });
 
     test('should update high scores correctly', () {
       // Add three scores
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 10,
         time: const Duration(seconds: 30),
         difficulty: GameDifficulty.hard,
@@ -95,7 +96,7 @@ void main() {
       expect(scoreProvider.highScores.length, equals(1));
       expect(scoreProvider.highScores.first.value, equals(1680));
 
-      scoreProvider.calculateScore(
+      scoreProvider.updateScore(
         moves: 5,
         time: const Duration(seconds: 15),
         difficulty: GameDifficulty.hard,

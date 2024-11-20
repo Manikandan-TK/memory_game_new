@@ -1,12 +1,10 @@
-import 'package:flutter/material.dart' hide CardTheme;
-import 'package:flutter/services.dart';
-import 'package:memory_game_new/models/card_theme.dart';
 import 'dart:math';
-import '../models/card_model.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/card_model.dart';
 import '../providers/card_theme_provider.dart';
-import '../widgets/card_pattern_painter.dart';
-import '../utils/logger.dart';
+import '../controllers/card_animation_controller.dart';
+import 'card_face.dart';
 
 class MemoryCardWidget extends StatefulWidget {
   final MemoryCard card;
@@ -14,274 +12,84 @@ class MemoryCardWidget extends StatefulWidget {
   final double? size;
 
   const MemoryCardWidget({
-    super.key,
+    Key? key,
     required this.card,
     required this.onTap,
     this.size,
-  });
+  }) : super(key: key);
 
   @override
   State<MemoryCardWidget> createState() => _MemoryCardWidgetState();
 }
 
-class _MemoryCardWidgetState extends State<MemoryCardWidget>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin<MemoryCardWidget> {
-  late final AnimationController _controller;
-  late final Animation<double> _flipAnimation;
-  late final Animation<double> _scaleAnimation;
-  bool _showFrontSide = false;
-  double _lastAnimationValue = 0.0;
-
-  @override
-  bool get wantKeepAlive => widget.card.isMatched || widget.card.isFlipped;
-
-  void _onFlipAnimationChanged() {
-    if (!mounted) return; // Safety check
-
-    // Only log when animation reaches key points
-    if (_flipAnimation.value == 1.0 || _flipAnimation.value == 0.0) {
-      GameLogger.d('Flip animation completed: ${_flipAnimation.value}');
-    }
-
-    if (_flipAnimation.value > 0.5 && !_showFrontSide) {
-      GameLogger.d('Card flipped to front');
-      setState(() => _showFrontSide = true);
-    } else if (_flipAnimation.value <= 0.5 && _showFrontSide) {
-      GameLogger.d('Card flipped to back');
-      setState(() => _showFrontSide = false);
-    }
-  }
+class _MemoryCardWidgetState extends State<MemoryCardWidget> with SingleTickerProviderStateMixin {
+  late final CardAnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
-    _showFrontSide = widget.card.isFlipped || widget.card.isMatched;
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+    _animationController = CardAnimationController(
       vsync: this,
-      value: widget.card.isFlipped || widget.card.isMatched ? 1.0 : 0.0,
+      initiallyFlipped: widget.card.isFlipped || widget.card.isMatched,
     );
+  }
 
-    _flipAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutBack,
-      reverseCurve: Curves.easeInBack,
-    ));
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.1),
-        weight: 0.5,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0),
-        weight: 0.5,
-      ),
-    ]).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _flipAnimation.addListener(_onFlipAnimationChanged);
+  void _handleCardTap() {
+    if (!widget.card.isMatched) {
+      _animationController.flipCard();
+      widget.onTap();
+    }
   }
 
   @override
   void didUpdateWidget(MemoryCardWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    // Update keep alive state if needed
-    if (oldWidget.card.isMatched != widget.card.isMatched ||
-        oldWidget.card.isFlipped != widget.card.isFlipped) {
-      updateKeepAlive();
-    }
-
     if (widget.card.isFlipped != oldWidget.card.isFlipped) {
-      GameLogger.d('Card flip state changed: ${widget.card.isFlipped}');
-      if (widget.card.isFlipped) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
+      _animationController.flipCard();
     }
-  }
-
-  @override
-  void dispose() {
-    _flipAnimation.removeListener(_onFlipAnimationChanged);
-    _controller.stop();
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final cardTheme = context.watch<CardThemeProvider>().currentTheme;
-
-    return AnimatedBuilder(
-      animation: Listenable.merge([_controller, _flipAnimation]),
+    return ListenableBuilder(
+      listenable: _animationController,
       builder: (context, child) {
+        final cardTheme = context.watch<CardThemeProvider>().currentTheme;
+        
         return Transform(
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.002) // Increased perspective effect
-            ..rotateY(pi * _flipAnimation.value),
+            ..setEntry(3, 2, 0.002)
+            ..rotateY(pi * _animationController.flipAnimation.value),
           alignment: Alignment.center,
-          child: _showFrontSide
-              ? _buildCardSide(
-                  context,
-                  colorScheme,
-                  cardTheme,
-                  true,
+          child: _animationController.showFrontSide
+              ? CardFace(
+                  card: widget.card,
+                  cardTheme: cardTheme,
+                  isFront: true,
+                  size: widget.size,
+                  onTap: _handleCardTap,
+                  isFlipped: widget.card.isFlipped,
                 )
               : Transform(
                   transform: Matrix4.identity()..rotateY(pi),
                   alignment: Alignment.center,
-                  child: _buildCardSide(
-                    context,
-                    colorScheme,
-                    cardTheme,
-                    false,
+                  child: CardFace(
+                    card: widget.card,
+                    cardTheme: cardTheme,
+                    isFront: false,
+                    size: widget.size,
+                    onTap: _handleCardTap,
+                    isFlipped: widget.card.isFlipped,
                   ),
                 ),
         );
       },
     );
   }
-
-  Widget _buildCardSide(
-    BuildContext context,
-    ColorScheme colorScheme,
-    CardTheme cardTheme,
-    bool isFront,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: RepaintBoundary(
-        child: Material(
-          elevation: widget.card.isFlipped ? 8 : 2,
-          shadowColor: widget.card.isMatched
-              ? Colors.green.withOpacity(0.5)
-              : colorScheme.shadow.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: _handleCardTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getBorderColor(colorScheme, cardTheme),
-                  width: 2,
-                ),
-                gradient: _getGradient(colorScheme, cardTheme),
-                boxShadow: _getBoxShadow(),
-              ),
-              child: Center(
-                child: isFront
-                    ? Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        alignment: Alignment.center,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Text(
-                              widget.card.emoji,
-                              style: TextStyle(
-                                fontSize: widget.size != null ? widget.size! * 0.85 : 40,
-                                height: 1,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      )
-                    : CustomPaint(
-                        painter: CardPatternPainter(
-                          primaryColor: cardTheme.primaryColor,
-                          secondaryColor: cardTheme.secondaryColor,
-                          themeType: cardTheme.type,
-                        ),
-                        child: const SizedBox(
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleCardTap() {
-    if (widget.card.isMatched) return;
-
-    HapticFeedback.lightImpact();
-    widget.onTap();
-  }
-
-  Color _getBorderColor(ColorScheme colorScheme, CardTheme cardTheme) {
-    if (widget.card.isMatched) return Colors.green.shade300;
-    if (widget.card.isFlipped) return cardTheme.primaryColor;
-    return colorScheme.outline.withOpacity(0.2);
-  }
-
-  LinearGradient _getGradient(ColorScheme colorScheme, CardTheme cardTheme) {
-    if (widget.card.isMatched) return _CardGradients.matchedGradient;
-    if (_showFrontSide) return _CardGradients.createFlippedGradient(cardTheme);
-    return _CardGradients.createUnflippedGradient(colorScheme);
-  }
-
-  List<BoxShadow>? _getBoxShadow() {
-    if (!widget.card.isMatched) return null;
-    return [
-      BoxShadow(
-        color: Colors.green.withOpacity(0.2),
-        blurRadius: 8,
-        spreadRadius: 2,
-      )
-    ];
-  }
-}
-
-class _CardGradients {
-  static final matchedGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Colors.green.shade300,
-      Colors.green.shade100,
-      Colors.green.shade200,
-    ],
-    stops: const [0.0, 0.5, 1.0],
-  );
-
-  static LinearGradient createFlippedGradient(CardTheme theme) => LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      theme.primaryColor,
-      theme.primaryColor.withOpacity(0.8),
-      theme.secondaryColor,
-    ],
-    stops: const [0.0, 0.5, 1.0],
-  );
-
-  static LinearGradient createUnflippedGradient(ColorScheme colorScheme) => LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      colorScheme.surfaceContainerHighest,
-      colorScheme.surface,
-      colorScheme.surfaceContainerHighest,
-    ],
-    stops: const [0.0, 0.5, 1.0],
-  );
 }

@@ -37,13 +37,13 @@ class CardPatternPainter extends CustomPainter {
   void _paintClassicPattern(Canvas canvas, Size size) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 2.5;
 
     final width = size.width;
     final height = size.height;
     
     // Draw border first
-    paint.color = primaryColor.withOpacity(0.6);
+    paint.color = primaryColor.withOpacity(0.8);
     final borderRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(4, 4, width - 8, height - 8),
       const Radius.circular(8),
@@ -55,7 +55,7 @@ class CardPatternPainter extends CustomPainter {
     canvas.clipPath(clipPath);
 
     final spacing = math.min(width, height) / 8;
-    paint.color = primaryColor.withOpacity(0.4);
+    paint.color = primaryColor.withOpacity(0.6);
 
     // Draw diagonal lines from top-left to bottom-right
     for (double i = -height; i < width + height; i += spacing) {
@@ -67,7 +67,7 @@ class CardPatternPainter extends CustomPainter {
     }
 
     // Draw crossing diagonal lines from top-right to bottom-left
-    paint.color = secondaryColor.withOpacity(0.3);
+    paint.color = secondaryColor.withOpacity(0.5);
     for (double i = -height; i < width + height; i += spacing) {
       canvas.drawLine(
         Offset(width - i, 0),
@@ -80,18 +80,18 @@ class CardPatternPainter extends CustomPainter {
   void _paintGeometricPattern(Canvas canvas, Size size) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 2.5;
 
     final centerX = size.width / 2;
     final centerY = size.height / 2;
-    final radius = math.min(size.width, size.height) * 0.3;
+    final radius = math.min(size.width, size.height) * 0.35;
 
     // Draw multiple rotated squares
     for (int i = 0; i < 4; i++) {
       final angle = i * math.pi / 4;
       paint.color = i.isEven 
-          ? primaryColor.withOpacity(0.5 - i * 0.1)
-          : secondaryColor.withOpacity(0.4 - i * 0.1);
+          ? primaryColor.withOpacity(0.7 - i * 0.1)
+          : secondaryColor.withOpacity(0.6 - i * 0.1);
 
       final points = <Offset>[];
       for (int j = 0; j < 4; j++) {
@@ -102,10 +102,13 @@ class CardPatternPainter extends CustomPainter {
         ));
       }
 
-      canvas.drawPath(
-        Path()..addPolygon(points, true),
-        paint,
-      );
+      final path = Path()
+        ..moveTo(points[0].dx, points[0].dy);
+      for (int j = 1; j < points.length; j++) {
+        path.lineTo(points[j].dx, points[j].dy);
+      }
+      path.close();
+      canvas.drawPath(path, paint);
     }
 
     // Draw connecting lines

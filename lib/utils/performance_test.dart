@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:memory_game_new/models/card_theme.dart';
 import 'dart:ui' as ui;
-import '../widgets/card_pattern_painter.dart';
+import 'package:memory_game_new/widgets/card_pattern_painter.dart';
 
 class PerformanceTest {
   /// Test results for each theme

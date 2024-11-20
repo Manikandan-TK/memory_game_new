@@ -49,7 +49,7 @@ class Score {
 
   @override
   String toString() => 
-    'Score(value: $value, moves: $moves, time: ${formattedTime}, difficulty: $difficulty)';
+    'Score(value: $value, moves: $moves, time: $formattedTime, difficulty: $difficulty)';
 
   // Helper method to create a copy with modified fields
   Score copyWith({

@@ -27,7 +27,8 @@ class GameScreen extends StatelessWidget {
         ),
         leading: IconButton.filled(
           style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+            backgroundColor:
+                theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
             foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
           ),
           icon: const Icon(Icons.arrow_back_rounded),
@@ -38,7 +39,8 @@ class GameScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: AppTheme.spacing8),
             child: IconButton.filled(
               style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.surface.withOpacity(AppTheme.opacityMedium),
+                backgroundColor: theme.colorScheme.surface
+                    .withOpacity(AppTheme.opacityMedium),
                 foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
               ),
               icon: const Icon(Icons.refresh),
@@ -57,7 +59,8 @@ class GameScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
+                    theme.colorScheme.primary
+                        .withOpacity(AppTheme.opacityMedium),
                     theme.colorScheme.surface,
                   ],
                   stops: const [0.0, 0.7],
@@ -124,25 +127,33 @@ class GameScreen extends StatelessWidget {
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final (rows, columns) = gameProvider.config.difficulty.gridSize;
-                          final isHardMode = gameProvider.config.difficulty == GameDifficulty.hard;
+                          final (rows, columns) =
+                              gameProvider.config.difficulty.gridSize;
+                          final isHardMode = gameProvider.config.difficulty ==
+                              GameDifficulty.hard;
 
                           // Calculate optimal card size based on screen width
                           final screenWidth = MediaQuery.of(context).size.width;
                           const horizontalPadding = 16.0;
                           const gridSpacing = 8.0;
-                          final availableWidth = screenWidth - horizontalPadding;
-                          final cardWidth = (availableWidth - (gridSpacing * (columns - 1))) / columns;
+                          final availableWidth =
+                              screenWidth - horizontalPadding;
+                          final cardWidth =
+                              (availableWidth - (gridSpacing * (columns - 1))) /
+                                  columns;
 
                           // Calculate total height needed
-                          final totalHeight = (cardWidth * rows) + (gridSpacing * (rows - 1));
+                          final totalHeight =
+                              (cardWidth * rows) + (gridSpacing * (rows - 1));
                           final viewportHeight = constraints.maxHeight;
 
                           return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: horizontalPadding / 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: horizontalPadding / 2),
                             child: ScrollConfiguration(
                               // Custom scroll behavior for smoother scrolling
-                              behavior: ScrollConfiguration.of(context).copyWith(
+                              behavior:
+                                  ScrollConfiguration.of(context).copyWith(
                                 physics: const BouncingScrollPhysics(
                                   parent: AlwaysScrollableScrollPhysics(),
                                 ),
@@ -153,7 +164,8 @@ class GameScreen extends StatelessWidget {
                                 addRepaintBoundaries: true,
                                 addAutomaticKeepAlives: true,
                                 // Use builder for better performance
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: columns,
                                   mainAxisSpacing: gridSpacing,
                                   crossAxisSpacing: gridSpacing,
@@ -175,7 +187,8 @@ class GameScreen extends StatelessWidget {
                                   final card = gameProvider.cards[index];
                                   return MemoryCardWidget(
                                     // Use a unique key combining card ID and state
-                                    key: ObjectKey('${card.id}_${card.isMatched}_${card.isFlipped}'),
+                                    key: ObjectKey(
+                                        '${card.id}_${card.isMatched}_${card.isFlipped}'),
                                     card: card,
                                     onTap: () => gameProvider.flipCard(index),
                                     size: cardWidth,
@@ -195,7 +208,8 @@ class GameScreen extends StatelessWidget {
                             Text(
                               'Congratulations!',
                               style: theme.textTheme.displaySmall?.copyWith(
-                                color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                color: Colors.white
+                                    .withOpacity(AppTheme.opacityHigh),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -208,8 +222,10 @@ class GameScreen extends StatelessWidget {
                                   height: 80,
                                   child: FilledButton(
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
-                                      foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                      backgroundColor: theme.colorScheme.primary
+                                          .withOpacity(AppTheme.opacityMedium),
+                                      foregroundColor: Colors.white
+                                          .withOpacity(AppTheme.opacityHigh),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
@@ -219,17 +235,20 @@ class GameScreen extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const HighScoresScreen(),
+                                          builder: (context) =>
+                                              const HighScoresScreen(),
                                         ),
                                       );
                                     },
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.emoji_events_rounded,
                                           size: 36,
-                                          color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                          color: Colors.white.withOpacity(
+                                              AppTheme.opacityHigh),
                                         ),
                                       ],
                                     ),
@@ -241,8 +260,10 @@ class GameScreen extends StatelessWidget {
                                   height: 80,
                                   child: FilledButton(
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary.withOpacity(AppTheme.opacityMedium),
-                                      foregroundColor: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                      backgroundColor: theme.colorScheme.primary
+                                          .withOpacity(AppTheme.opacityMedium),
+                                      foregroundColor: Colors.white
+                                          .withOpacity(AppTheme.opacityHigh),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
@@ -253,12 +274,14 @@ class GameScreen extends StatelessWidget {
                                       Navigator.pop(context);
                                     },
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.home_rounded,
                                           size: 36,
-                                          color: Colors.white.withOpacity(AppTheme.opacityHigh),
+                                          color: Colors.white.withOpacity(
+                                              AppTheme.opacityHigh),
                                         ),
                                       ],
                                     ),
